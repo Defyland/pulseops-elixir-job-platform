@@ -240,6 +240,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "mix deps.audit",
         "mix test --cover",
         "actions/upload-artifact",
+        "otp-version: \"29.0\"",
         "npx @redocly/cli lint openapi.yaml",
         "docker build .",
         "fetch-depth: 0"
