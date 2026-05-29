@@ -276,6 +276,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "docker build -t pulseops-ci:${{ github.sha }} .",
         "fetch-depth: 0",
         "pulseops-sbom.spdx.json",
+        "trivy-results.json",
+        "pulseops-trivy",
         "exit-code: \"0\""
       ],
       &assert_contains!(ci, &1)
