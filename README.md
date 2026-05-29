@@ -35,6 +35,7 @@ More detail:
 - [docs/architecture/overview.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/architecture/overview.md)
 - [docs/architecture/supervision-tree.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/architecture/supervision-tree.md)
 - [docs/architecture/data-consistency.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/architecture/data-consistency.md)
+- [docs/architecture/messaging.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/architecture/messaging.md)
 - [docs/architecture/security-model.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/architecture/security-model.md)
 - [docs/diagrams/request-and-worker-flows.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/diagrams/request-and-worker-flows.md)
 

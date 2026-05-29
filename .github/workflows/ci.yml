@@ -29,6 +29,8 @@ jobs:
       PHX_SERVER: "false"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: erlef/setup-beam@v1
         with:

@@ -20,6 +20,9 @@ fully complete.
   reconciliation.
 - Request-level coverage exercises organizations, API keys, queues, health,
   metrics, job lifecycle, rate limiting, and concurrency regressions.
+- Spec compliance coverage in
+  [general_project_spec_test.exs](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/test/spec_compliance/general_project_spec_test.exs)
+  verifies the repository against the general project baseline.
 - Benchmark scripts and measured smoke, load, stress, and spike results are
   published.
 - CI covers formatting, lint, tests, security, Docker build validation,
@@ -41,12 +44,15 @@ fully complete.
 - Closed the `running`-job consistency gap with terminal Oban state
   reconciliation and regression coverage.
 - Split the repository into atomic Conventional Commits.
+- Added executable spec-driven tests that fail when required docs, OpenAPI
+  evidence, CI checks, benchmark assets, security controls, messaging notes, or
+  commit-history conventions regress.
+- Replaced the missing Docker base image with a resolvable Elixir release image
+  and validated `docker build .` locally.
 
-### External verification still dependent on the local environment
+### External verification status
 
-- Local `docker build .` verification still depends on a running Docker daemon.
-  The implementation and CI hook can exist without that daemon being available
-  in this desktop session.
+- `docker build .` has been verified locally against the current Dockerfile.
 
 ## Definition of done checkpoints
 

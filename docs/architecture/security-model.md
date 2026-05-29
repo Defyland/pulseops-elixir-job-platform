@@ -40,20 +40,20 @@ while preserving a small operational surface for the platform team.
   `po_live_<prefix>_<secret>`.
 - Only the prefix and SHA-256 digest are stored in PostgreSQL.
 
-### Authorization
+### Tenant isolation and authorization
 
 - Every tenant-scoped query filters by `organization_id`.
 - Cross-tenant access returns `404`, not `403`, to avoid resource discovery.
 - Retry, cancel, queue mutation, and API key revocation all run through the same
   tenant boundary check.
 
-### Request abuse protection
+### Rate limiting
 
 - `PulseOpsWeb.Plugs.ApiRateLimit` enforces a configurable request budget.
 - Public routes are rate-limited by caller IP.
 - Authenticated routes are rate-limited by API key identifier.
 
-### Input and execution safety
+### Input validation and execution safety
 
 - Ecto changesets validate queue names, attempt ceilings, timeout budgets, and
   worker allowlists.
@@ -61,7 +61,7 @@ while preserving a small operational surface for the platform team.
 - The worker layer only executes supported handlers (`noop`, `flaky`, `crash`,
   `sleep`, `webhook`).
 
-### Auditability
+### Audit logging
 
 - Every lifecycle mutation writes immutable `job_events`.
 - Request and correlation IDs are emitted in structured logs and error payloads.

@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.19.5-erlang-29.0.1-debian-bookworm-20250520 AS build
+FROM elixir:1.19.5-otp-28-slim AS build
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential git ca-certificates && \
@@ -24,7 +24,7 @@ COPY README.md README.md
 RUN mix compile
 RUN mix release
 
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends libstdc++6 openssl ca-certificates locales && \
