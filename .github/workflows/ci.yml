@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pulse_ops_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      MIX_ENV: test
+      DATABASE_URL: ecto://postgres:postgres@localhost/pulse_ops_test
+      SECRET_KEY_BASE: 4M4IB5z4lODkSOcQm4uNX1mQv1l5hMPU9B2X0cA1DqfQz0F1zW9O7pL2V0hYtQ9p
+      PHX_SERVER: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.19.5"
+          otp-version: "29.0.1"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
+
+      - name: Lint
+        run: mix credo --strict
+
+      - name: Security scan
+        run: mix sobelow --skip --exit
+
+      - name: Dependency audit
+        run: mix deps.audit --ignore-advisory-ids GHSA-g2wm-735q-3f56
+
+      - name: Test suite
+        run: mix test --cover
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pulseops-cover
+          path: cover/
+
+      - name: Validate OpenAPI
+        run: npx @redocly/cli lint openapi.yaml
+
+      - name: Validate Docker build
+        run: docker build .
