@@ -7,43 +7,42 @@ fully complete.
 
 ## Audit summary
 
-### Already satisfied
+### Repository-controlled requirements closed
 
 - Product-grade README exists in [README.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/README.md).
 - Mandatory documentation folders exist under `docs/`.
 - Phoenix API, OpenAPI contract, database schema, async worker flow, and
   observability stack are implemented.
-- CI workflow covers formatting, lint, tests, security, OpenAPI validation, and
-  Docker build validation in [ci.yml](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/.github/workflows/ci.yml).
-- k6 benchmark scripts exist for smoke, load, stress, and spike scenarios.
-
-### Work identified during this audit
-
-1. Publish measured `stress` and `spike` results, not just smoke/load.
-2. Make security controls easier to verify with explicit threat-model and
-   authorization-matrix documents.
-3. Document data consistency decisions beyond the README summary:
-   transaction boundaries, indexes, foreign keys, isolation assumptions,
-   migrations, and rollback.
-4. Expand request-level tests for exposed API surfaces and rate limiting.
-5. Tighten OpenAPI completeness so the contract proves auth/error behaviour
-   without relying on prose only.
-6. Publish CI coverage artifacts, not only the console summary.
-7. Finish a coherent Conventional Commit implementation history from the current
-   uncommitted worktree.
+- Security evidence is explicit through the threat model, authorization matrix,
+  rate-limit examples, and audit-oriented API docs.
+- Data consistency decisions are documented, including transaction boundaries,
+  constraints, isolation assumptions, rollback strategy, and terminal Oban state
+  reconciliation.
+- Request-level coverage exercises organizations, API keys, queues, health,
+  metrics, job lifecycle, rate limiting, and concurrency regressions.
+- Benchmark scripts and measured smoke, load, stress, and spike results are
+  published.
+- CI covers formatting, lint, tests, security, Docker build validation,
+  OpenAPI linting, and coverage artifact upload in
+  [ci.yml](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/.github/workflows/ci.yml).
+- Git history now tells a coherent Conventional Commit story across bootstrap,
+  tests, docs, performance, and CI.
 
 ## Execution plan
 
-### In progress in this implementation pass
+### Completed in this implementation pass
 
-- Add benchmark result publications for `stress` and `spike`.
-- Add explicit security and data-consistency documents.
-- Expand controller/request coverage for API keys, queues, observability, rate
+- Published measured `stress` and `spike` results.
+- Added explicit security and data-consistency documents.
+- Expanded controller/request coverage for API keys, queues, observability, rate
   limiting, and validation paths.
-- Improve OpenAPI metadata and error coverage.
-- Upload coverage artifacts in CI.
+- Improved OpenAPI metadata and standardized error coverage.
+- Added coverage artifact upload in CI.
+- Closed the `running`-job consistency gap with terminal Oban state
+  reconciliation and regression coverage.
+- Split the repository into atomic Conventional Commits.
 
-### External verification still expected after this pass
+### External verification still dependent on the local environment
 
 - Local `docker build .` verification still depends on a running Docker daemon.
   The implementation and CI hook can exist without that daemon being available
