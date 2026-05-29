@@ -238,6 +238,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "mix credo --strict",
         "mix sobelow --skip --exit",
         "mix deps.audit",
+        "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24",
         "mix test --cover",
         "actions/upload-artifact",
         "otp-version: \"29.0\"",
