@@ -201,6 +201,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "test/pulse_ops_web/controllers/api_key_controller_test.exs",
         "test/pulse_ops_web/controllers/queue_controller_test.exs",
         "test/pulse_ops/jobs/execution_worker_test.exs",
+        "test/pulse_ops/jobs/reconciler_test.exs",
+        "test/pulse_ops_web/controllers/error_json_test.exs",
         "test/pulse_ops/rate_limiter_test.exs",
         "test/pulse_ops/queues/provisioner_test.exs"
       ],

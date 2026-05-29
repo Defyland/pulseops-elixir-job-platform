@@ -59,7 +59,7 @@ fully complete.
 
 ### External verification status
 
-- `make ci` has been verified locally with 50 tests, 0 failures, and 82.17%
+- `make ci` has been verified locally with 52 tests, 0 failures, and 83.29%
   total coverage.
 - `make openapi` has been verified locally against `openapi.yaml`.
 - `make docker-build` has been verified locally against the current Dockerfile.
