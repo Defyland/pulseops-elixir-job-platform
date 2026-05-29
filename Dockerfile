@@ -1,4 +1,4 @@
-FROM elixir:1.19.5-otp-28-slim AS build
+FROM elixir:1.19-otp-28-slim AS build
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential git ca-certificates && \
