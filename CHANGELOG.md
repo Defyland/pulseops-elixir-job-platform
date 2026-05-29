@@ -24,6 +24,10 @@
 - README CI and release badges for public evaluator signal.
 - Observability evidence with captured demo output, Prometheus samples,
   structured log examples, and a dashboard preview.
+- Production gap analysis that separates challenge completeness from real
+  customer-production requirements.
+- Dependabot maintenance for Mix dependencies, GitHub Actions, and Docker base
+  images.
 
 ### Fixed
 

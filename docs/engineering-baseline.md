@@ -38,6 +38,10 @@ fully complete.
 - Observability evidence is captured in
   [docs/observability/evidence.md](observability/evidence.md), including demo
   output, metrics, structured logs, and a dashboard preview.
+- The delta to a fully hosted production service is documented in
+  [production-gap-analysis.md](architecture/production-gap-analysis.md).
+- Dependabot is configured for Mix, GitHub Actions, and Docker dependency
+  maintenance.
 
 ## Execution plan
 
@@ -64,6 +68,8 @@ fully complete.
 - Added public CI/release badges and release-tag guidance.
 - Added captured observability evidence and aligned the Grafana success-rate
   query with the live metric name exposed by `/metrics`.
+- Added a 100% production readiness gap analysis and dependency maintenance
+  automation.
 
 ### External verification status
 

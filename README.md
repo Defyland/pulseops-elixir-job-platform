@@ -11,6 +11,7 @@ Evaluator entrypoints:
 
 - [docs/evaluator-guide.md](docs/evaluator-guide.md)
 - [docs/architecture/production-readiness.md](docs/architecture/production-readiness.md)
+- [docs/architecture/production-gap-analysis.md](docs/architecture/production-gap-analysis.md)
 - [docs/observability/evidence.md](docs/observability/evidence.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - `make ci`
@@ -50,6 +51,7 @@ More detail:
 - [docs/architecture/data-consistency.md](docs/architecture/data-consistency.md)
 - [docs/architecture/messaging.md](docs/architecture/messaging.md)
 - [docs/architecture/production-readiness.md](docs/architecture/production-readiness.md)
+- [docs/architecture/production-gap-analysis.md](docs/architecture/production-gap-analysis.md)
 - [docs/architecture/security-model.md](docs/architecture/security-model.md)
 - [docs/diagrams/request-and-worker-flows.md](docs/diagrams/request-and-worker-flows.md)
 

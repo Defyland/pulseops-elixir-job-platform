@@ -47,6 +47,8 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 - Authorization matrix: `docs/api/authorization-matrix.md`
 - Runbook: `docs/runbooks/timeout-and-dead-letter.md`
 - Production readiness: `docs/architecture/production-readiness.md`
+- 100% production gap analysis:
+  `docs/architecture/production-gap-analysis.md`
 - Observability evidence: `docs/observability/evidence.md`
 - Benchmark results: `benchmarks/results/local-baseline.md`
 - Spec compliance tests: `test/spec_compliance/general_project_spec_test.exs`
@@ -64,6 +66,8 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
   measured latency, throughput, error rate, and runtime notes.
 - The docs name trade-offs and residual risk directly instead of implying the
   project is production-complete in every dimension.
+- The production gap analysis distinguishes challenge completeness from real
+  customer-production requirements.
 
 ## Known Non-Goals
 

@@ -51,6 +51,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/architecture/supervision-tree.md
     docs/architecture/data-consistency.md
     docs/architecture/messaging.md
+    docs/architecture/production-gap-analysis.md
     docs/architecture/production-readiness.md
     docs/architecture/security-model.md
     docs/benchmarks/methodology.md
@@ -100,6 +101,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "github/v/tag/Defyland/pulseops-elixir-job-platform",
         "docs/evaluator-guide.md",
         "docs/architecture/production-readiness.md",
+        "docs/architecture/production-gap-analysis.md",
         "docs/observability/evidence.md",
         "make demo"
       ],
@@ -229,6 +231,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
   test "CI workflow validates formatting, lint, security, tests, OpenAPI, coverage, and Docker" do
     ci = read!(".github/workflows/ci.yml")
+    dependabot = read!(".github/dependabot.yml")
     readme = read!("README.md")
 
     Enum.each(
@@ -252,6 +255,39 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
     assert_contains!(readme, "actions/workflows/ci.yml/badge.svg?branch=main")
     assert_contains!(readme, "github/v/tag/Defyland/pulseops-elixir-job-platform")
+
+    Enum.each(
+      [
+        "package-ecosystem: \"mix\"",
+        "package-ecosystem: \"github-actions\"",
+        "package-ecosystem: \"docker\"",
+        "interval: \"weekly\""
+      ],
+      &assert_contains!(dependabot, &1)
+    )
+  end
+
+  test "100 percent production readiness gaps are explicit and prioritized" do
+    gap_analysis = read!("docs/architecture/production-gap-analysis.md")
+
+    Enum.each(
+      [
+        "100% Production Readiness Gap Analysis",
+        "Current Readiness Level",
+        "Already Production-Shaped",
+        "P0 Before Real Customer Traffic",
+        "P1 Shortly After Launch",
+        "P2 Hardening",
+        "Go/No-Go Review",
+        "Deployment target and infrastructure as code",
+        "Managed PostgreSQL operations",
+        "Distributed rate limiting",
+        "Webhook egress hardening",
+        "Retention pruning",
+        "Container and supply-chain scanning"
+      ],
+      &assert_contains!(gap_analysis, &1)
+    )
   end
 
   test "observability baseline is implemented and documented" do

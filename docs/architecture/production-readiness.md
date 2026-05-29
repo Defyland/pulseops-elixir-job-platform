@@ -4,6 +4,10 @@ PulseOps is ready as a senior-level backend challenge implementation. This
 review defines what is already production-shaped, what should be monitored, and
 which items remain deliberate follow-ups before a real customer rollout.
 
+For the full delta between this challenge implementation and a real customer
+production launch, see
+[production-gap-analysis.md](production-gap-analysis.md).
+
 ## Operational Contract
 
 - API availability target: 99.9% monthly for authenticated job control routes.
@@ -22,6 +26,8 @@ which items remain deliberate follow-ups before a real customer rollout.
 - Health and readiness endpoints are split as `/healthz` and `/readyz`.
 - The CI workflow validates formatting, compilation, static analysis, security,
   dependency audit, tests with coverage, OpenAPI linting, and Docker build.
+- Dependabot is configured for Mix dependencies, GitHub Actions, and Docker
+  base images.
 
 ## Observability Readiness
 
