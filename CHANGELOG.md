@@ -1,0 +1,44 @@
+# Changelog
+
+## 0.1.0 - 2026-05-29
+
+### Added
+
+- Multi-tenant Phoenix API for organizations, API keys, queues, and jobs.
+- Durable asynchronous execution through Oban.
+- Job attempts, audit events, retry, cancel, dead-letter, and reconciliation
+  flows.
+- API key authentication, tenant isolation, rate limiting, validation, and
+  structured error responses.
+- OpenAPI contract and request/response examples.
+- Structured logs, request and correlation IDs, Prometheus metrics,
+  OpenTelemetry setup, health/readiness probes, and Grafana dashboard.
+- k6 smoke, load, stress, and spike benchmarks with measured local results.
+- CI validation for formatting, compilation, Credo, Sobelow, dependency audit,
+  tests with coverage, OpenAPI linting, and Docker build.
+- Spec compliance tests that enforce the repository baseline as executable
+  evidence.
+- Evaluator guide, production readiness review, `Makefile` shortcuts, and a
+  reproducible API demo.
+- `.dockerignore` for smaller and less noisy release build contexts.
+
+### Fixed
+
+- Removed queue synchronization from the enqueue hot path after stress testing
+  exposed Provisioner saturation.
+- Synchronized newly provisioned default queues after organization registration
+  so fresh tenants can execute jobs immediately in the runtime demo.
+- Added terminal Oban state reconciliation for platform jobs that remain
+  `running` after executor completion.
+- Replaced a missing Docker base image with a resolvable Elixir release image.
+- Made local PostgreSQL port binding configurable with `POSTGRES_PORT` and
+  removed obsolete Docker Compose metadata.
+- Replaced local absolute filesystem links in public documentation with
+  portable repository-relative links.
+
+### Known Follow-Ups
+
+- Distributed rate limiting for multi-node deployments.
+- Retention pruning for job history.
+- Webhook egress allowlisting and per-destination circuit breaking.
+- Tenant-scoped API key permissions.

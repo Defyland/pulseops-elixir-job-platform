@@ -71,7 +71,7 @@ while preserving a small operational surface for the platform team.
 
 - Runtime secrets come from environment variables such as `DATABASE_URL`,
   `SECRET_KEY_BASE`, and `OTEL_EXPORTER_OTLP_ENDPOINT`.
-- Example values are documented in [.env.example](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/.env.example).
+- Example values are documented in [.env.example](../../.env.example).
 - No plaintext API key secret is persisted after issuance.
 
 ## Residual risk and follow-up

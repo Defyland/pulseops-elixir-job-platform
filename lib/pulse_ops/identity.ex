@@ -4,36 +4,18 @@ defmodule PulseOps.Identity do
   import Ecto.Query, warn: false
 
   alias PulseOps.Identity.{ApiKey, ApiToken, Organization}
-  alias PulseOps.Queues.Queue
+  alias PulseOps.Queues.{Provisioner, Queue}
   alias PulseOps.Repo
 
   def register_organization(attrs) do
-    Repo.transaction(fn ->
-      with {:ok, organization} <-
-             %Organization{}
-             |> Organization.changeset(attrs)
-             |> Repo.insert(),
-           {:ok, queue} <-
-             %Queue{}
-             |> Queue.changeset(%{
-               "organization_id" => organization.id,
-               "name" => "default",
-               "concurrency" => 5,
-               "max_attempts" => 5,
-               "execution_timeout_ms" => 30_000
-             })
-             |> Repo.insert(),
-           {:ok, api_key, token} <- create_api_key_record(organization, %{"name" => "bootstrap"}) do
-        %{
-          organization: organization,
-          bootstrap_api_key: token,
-          default_queue: queue,
-          api_key: api_key
-        }
-      else
-        {:error, reason} -> Repo.rollback(reason)
-      end
-    end)
+    case persist_organization(attrs) do
+      {:ok, %{default_queue: queue} = result} ->
+        :ok = Provisioner.sync_queue(queue)
+        {:ok, result}
+
+      {:error, _reason} = error ->
+        error
+    end
   end
 
   def authenticate_api_key(token) do
@@ -100,5 +82,34 @@ defmodule PulseOps.Identity do
     |> Repo.update_all(set: [last_used_at: now, updated_at: now])
 
     :ok
+  end
+
+  defp persist_organization(attrs) do
+    Repo.transaction(fn ->
+      with {:ok, organization} <-
+             %Organization{}
+             |> Organization.changeset(attrs)
+             |> Repo.insert(),
+           {:ok, queue} <-
+             %Queue{}
+             |> Queue.changeset(%{
+               "organization_id" => organization.id,
+               "name" => "default",
+               "concurrency" => 5,
+               "max_attempts" => 5,
+               "execution_timeout_ms" => 30_000
+             })
+             |> Repo.insert(),
+           {:ok, api_key, token} <- create_api_key_record(organization, %{"name" => "bootstrap"}) do
+        %{
+          organization: organization,
+          bootstrap_api_key: token,
+          default_queue: queue,
+          api_key: api_key
+        }
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
   end
 end

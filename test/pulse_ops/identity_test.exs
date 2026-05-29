@@ -1,9 +1,10 @@
 defmodule PulseOps.IdentityTest do
-  use PulseOps.DataCase, async: true
+  use PulseOps.DataCase, async: false
 
   alias PulseOps.Fixtures
   alias PulseOps.Identity
   alias PulseOps.Queues
+  alias PulseOps.Queues.Provisioner
 
   test "register_organization provisions the bootstrap queue and authenticates the returned API key" do
     {:ok, result} =
@@ -21,6 +22,32 @@ defmodule PulseOps.IdentityTest do
     assert api_key.key_prefix
 
     assert [%{name: "default"}] = Queues.list_queues(organization)
+  end
+
+  test "register_organization works while the runtime provisioner is running" do
+    original_oban_config = Application.get_env(:pulse_ops, Oban, [])
+    Application.put_env(:pulse_ops, Oban, Keyword.put(original_oban_config, :testing, :inline))
+
+    on_exit(fn ->
+      Application.put_env(:pulse_ops, Oban, original_oban_config)
+
+      if pid = Process.whereis(Provisioner) do
+        GenServer.stop(pid)
+      end
+    end)
+
+    start_supervised!(Provisioner)
+    unique = System.unique_integer([:positive])
+
+    assert {:ok, result} =
+             Identity.register_organization(%{
+               "name" => "Runtime #{unique}",
+               "slug" => "runtime-#{unique}",
+               "retention_days" => 14
+             })
+
+    assert result.default_queue.name == "default"
+    assert Process.whereis(Provisioner)
   end
 
   test "issue_api_key creates a second usable token" do

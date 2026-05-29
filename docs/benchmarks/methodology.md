@@ -37,4 +37,4 @@ k6 run benchmarks/spike.js
 
 ## Published results
 
-- latest local capture: [docs/benchmarks/latest-results.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/docs/benchmarks/latest-results.md)
+- latest local capture: [docs/benchmarks/latest-results.md](latest-results.md)

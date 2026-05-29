@@ -38,8 +38,10 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
   )
 
   @documentation_files ~w(
+    CHANGELOG.md
     README.md
     openapi.yaml
+    docs/evaluator-guide.md
     docs/api/examples.md
     docs/api/errors.md
     docs/api/authorization-matrix.md
@@ -48,6 +50,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/architecture/supervision-tree.md
     docs/architecture/data-consistency.md
     docs/architecture/messaging.md
+    docs/architecture/production-readiness.md
     docs/architecture/security-model.md
     docs/benchmarks/methodology.md
     docs/benchmarks/latest-results.md
@@ -77,6 +80,93 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
     Enum.each(@readme_sections, fn section ->
       assert readme =~ "## #{section}"
+    end)
+  end
+
+  test "external evaluator experience is explicit and reproducible" do
+    readme = read!("README.md")
+    evaluator = read!("docs/evaluator-guide.md")
+    readiness = read!("docs/architecture/production-readiness.md")
+    makefile = read!("Makefile")
+    demo = read!("scripts/demo.sh")
+    dockerignore = read!(".dockerignore")
+
+    Enum.each(
+      ["docs/evaluator-guide.md", "docs/architecture/production-readiness.md", "make demo"],
+      &assert_contains!(readme, &1)
+    )
+
+    Enum.each(
+      ["Five-Minute Review", "Evidence Map", "Senior-Level Signals", "Known Non-Goals"],
+      &assert_contains!(evaluator, &1)
+    )
+
+    Enum.each(
+      ["Operational Contract", "Deployment Readiness", "Scaling Limits", "Rollback Plan"],
+      &assert_contains!(readiness, &1)
+    )
+
+    Enum.each(["ci:", "docker-build:", "demo:"], &assert_contains!(makefile, &1))
+
+    Enum.each(
+      [
+        "#!/usr/bin/env bash",
+        "POSTGRES_PORT=\"${POSTGRES_PORT:-55432}\"",
+        "docker compose up -d postgres",
+        "Demo completed successfully"
+      ],
+      &assert_contains!(demo, &1)
+    )
+
+    assert executable?("scripts/demo.sh")
+    assert_contains!(read!("docker-compose.yml"), "${POSTGRES_PORT:-5432}:5432")
+    assert_contains!(read!("config/dev.exs"), "System.get_env(\"POSTGRES_PORT\", \"5432\")")
+    assert_contains!(dockerignore, "_build")
+    assert_contains!(dockerignore, "deps")
+  end
+
+  test "documentation is portable and does not expose local filesystem paths" do
+    files =
+      ["README.md", "CHANGELOG.md", "openapi.yaml"]
+      |> Enum.map(&Path.join(@repo, &1))
+      |> Enum.concat(Path.wildcard(Path.join(@repo, "docs/**/*.md")))
+      |> Enum.concat(Path.wildcard(Path.join(@repo, "benchmarks/**/*.md")))
+      |> Enum.concat(Path.wildcard(Path.join(@repo, "benchmarks/*.md")))
+      |> Enum.uniq()
+
+    assert files != []
+
+    Enum.each(files, fn file ->
+      content = File.read!(file)
+
+      refute content =~ "/Users/",
+             "expected #{Path.relative_to(file, @repo)} to avoid local absolute paths"
+    end)
+  end
+
+  test "local markdown links resolve from their source documents" do
+    files =
+      ["README.md", "CHANGELOG.md"]
+      |> Enum.map(&Path.join(@repo, &1))
+      |> Enum.concat(Path.wildcard(Path.join(@repo, "docs/**/*.md")))
+      |> Enum.concat(Path.wildcard(Path.join(@repo, "benchmarks/**/*.md")))
+      |> Enum.concat(Path.wildcard(Path.join(@repo, "benchmarks/*.md")))
+      |> Enum.uniq()
+
+    Enum.each(files, fn file ->
+      file
+      |> File.read!()
+      |> local_markdown_links()
+      |> Enum.each(fn target ->
+        path =
+          target
+          |> String.split("#", parts: 2)
+          |> hd()
+          |> then(&Path.expand(&1, Path.dirname(file)))
+
+        assert File.exists?(path),
+               "expected #{Path.relative_to(file, @repo)} link #{inspect(target)} to resolve"
+      end)
     end)
   end
 
@@ -216,6 +306,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
   test "messaging and transaction baselines are explicit for the Oban-backed design" do
     messaging = read!("docs/architecture/messaging.md")
     data = read!("docs/architecture/data-consistency.md")
+    identity = read!("lib/pulse_ops/identity.ex")
+    provisioner = read!("lib/pulse_ops/queues/provisioner.ex")
 
     Enum.each(
       [
@@ -243,6 +335,9 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
       ],
       &assert_contains!(data, &1)
     )
+
+    assert_contains!(identity, "Provisioner.sync_queue(queue)")
+    assert_contains!(provisioner, "Oban.start_queue")
   end
 
   test "Dockerfile uses a resolvable Elixir base image and builds a release" do
@@ -282,5 +377,25 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
   defp assert_contains!(content, expected) do
     assert content =~ expected, "expected content to include #{inspect(expected)}"
+  end
+
+  defp executable?(relative_path) do
+    mode =
+      @repo
+      |> Path.join(relative_path)
+      |> File.stat!()
+      |> Map.fetch!(:mode)
+
+    Bitwise.band(mode, 0o111) != 0
+  end
+
+  defp local_markdown_links(content) do
+    Regex.scan(~r/\[[^\]]+\]\(([^)]+)\)/, content)
+    |> Enum.map(fn [_full, target] -> target end)
+    |> Enum.reject(&external_or_anchor_link?/1)
+  end
+
+  defp external_or_anchor_link?(target) do
+    String.starts_with?(target, ["http://", "https://", "mailto:", "#"])
   end
 end

@@ -9,7 +9,7 @@ fully complete.
 
 ### Repository-controlled requirements closed
 
-- Product-grade README exists in [README.md](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/README.md).
+- Product-grade README exists in [README.md](../README.md).
 - Mandatory documentation folders exist under `docs/`.
 - Phoenix API, OpenAPI contract, database schema, async worker flow, and
   observability stack are implemented.
@@ -21,15 +21,18 @@ fully complete.
 - Request-level coverage exercises organizations, API keys, queues, health,
   metrics, job lifecycle, rate limiting, and concurrency regressions.
 - Spec compliance coverage in
-  [general_project_spec_test.exs](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/test/spec_compliance/general_project_spec_test.exs)
+  [general_project_spec_test.exs](../test/spec_compliance/general_project_spec_test.exs)
   verifies the repository against the general project baseline.
 - Benchmark scripts and measured smoke, load, stress, and spike results are
   published.
 - CI covers formatting, lint, tests, security, Docker build validation,
   OpenAPI linting, and coverage artifact upload in
-  [ci.yml](/Users/allanflavio/Documents/projects/PERSONAL/backend-challenges/pulseops-elixir-job-platform/.github/workflows/ci.yml).
+  [ci.yml](../.github/workflows/ci.yml).
 - Git history now tells a coherent Conventional Commit story across bootstrap,
   tests, docs, performance, and CI.
+- External evaluation entrypoints exist through
+  [docs/evaluator-guide.md](evaluator-guide.md), `Makefile`, `scripts/demo.sh`,
+  and [production-readiness.md](architecture/production-readiness.md).
 
 ## Execution plan
 
@@ -49,10 +52,20 @@ fully complete.
   commit-history conventions regress.
 - Replaced the missing Docker base image with a resolvable Elixir release image
   and validated `docker build .` locally.
+- Removed local filesystem paths from public documentation and added link
+  resolution checks to the spec compliance suite.
+- Added a reproducible API demo and production readiness review for evaluator
+  walkthroughs.
 
 ### External verification status
 
-- `docker build .` has been verified locally against the current Dockerfile.
+- `make ci` has been verified locally with 50 tests, 0 failures, and 82.17%
+  total coverage.
+- `make openapi` has been verified locally against `openapi.yaml`.
+- `make docker-build` has been verified locally against the current Dockerfile.
+- `make demo` has been verified locally through tenant creation, job enqueue,
+  `succeeded` terminal status, lifecycle event output, and Prometheus metric
+  sampling.
 
 ## Definition of done checkpoints
 
