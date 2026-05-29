@@ -22,6 +22,14 @@ config :pulse_ops, PulseOpsWeb.Endpoint,
 
 config :pulse_ops, Oban, testing: :manual
 
+config :pulse_ops, :webhook_security, %{
+  allowed_hosts: [],
+  allow_http: true,
+  allow_private_networks: true,
+  resolve_dns: false,
+  circuit_breaker: %{failure_threshold: 2, reset_after_ms: 250}
+}
+
 # Print only warnings and errors during test
 config :logger, level: :warning
 

@@ -10,6 +10,7 @@ defmodule PulseOps.Jobs do
   alias PulseOps.Repo
 
   @terminal_oban_states ~w(completed cancelled discarded)
+  @retention_prunable_statuses ~w(succeeded dead_lettered cancelled)
 
   def list_jobs(%Organization{id: organization_id}, filters \\ %{}) do
     Job
@@ -146,6 +147,49 @@ defmodule PulseOps.Jobs do
     end)
   end
 
+  def prune_expired_jobs(now \\ DateTime.utc_now()) do
+    now = DateTime.truncate(now, :microsecond)
+
+    Repo.transaction(fn ->
+      expired_job_ids = expired_job_ids_query(now)
+
+      {events_count, _} =
+        from(event in JobEvent, where: event.job_id in subquery(expired_job_ids))
+        |> Repo.delete_all()
+
+      {attempts_count, _} =
+        from(attempt in JobAttempt, where: attempt.job_id in subquery(expired_job_ids))
+        |> Repo.delete_all()
+
+      {oban_jobs_count, _} =
+        from(oban_job in ObanJob,
+          join: job in Job,
+          on: job.oban_job_id == oban_job.id,
+          where: job.id in subquery(expired_job_ids)
+        )
+        |> Repo.delete_all()
+
+      {jobs_count, _} =
+        from(job in Job, where: job.id in subquery(expired_job_ids))
+        |> Repo.delete_all()
+
+      summary = %{
+        jobs: jobs_count,
+        attempts: attempts_count,
+        events: events_count,
+        oban_jobs: oban_jobs_count
+      }
+
+      :telemetry.execute([:pulse_ops, :jobs, :retention, :pruned], summary, %{})
+
+      summary
+    end)
+    |> case do
+      {:ok, summary} -> summary
+      {:error, reason} -> raise "failed to prune expired jobs: #{inspect(reason)}"
+    end
+  end
+
   defp do_create_job(%Organization{} = organization, attrs) do
     organization
     |> Queues.find_queue(attrs)
@@ -218,6 +262,24 @@ defmodule PulseOps.Jobs do
       select: {job.id, oban_job.id}
     )
     |> Repo.all()
+  end
+
+  defp expired_job_ids_query(now) do
+    from(job in Job,
+      join: organization in Organization,
+      on: organization.id == job.organization_id,
+      where: job.status in ^@retention_prunable_statuses,
+      where:
+        fragment(
+          "COALESCE(?, ?, ?) < (?::timestamp without time zone - (? * interval '1 day'))",
+          job.completed_at,
+          job.discarded_at,
+          job.cancelled_at,
+          ^now,
+          organization.retention_days
+        ),
+      select: job.id
+    )
   end
 
   defp reconcile_terminal_job(job_id, oban_job_id) do

@@ -23,10 +23,42 @@ end
 config :pulse_ops, PulseOpsWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+default_rate_limit_storage = if config_env() == :prod, do: "postgres", else: "ets"
+
+rate_limit_storage =
+  case String.downcase(System.get_env("API_RATE_LIMIT_STORAGE", default_rate_limit_storage)) do
+    storage when storage in ["postgres", "pg"] -> :postgres
+    _ -> :ets
+  end
+
 config :pulse_ops, :api_rate_limit, %{
   limit: String.to_integer(System.get_env("API_RATE_LIMIT", "240")),
-  window_ms: String.to_integer(System.get_env("API_RATE_LIMIT_WINDOW_MS", "60000"))
+  window_ms: String.to_integer(System.get_env("API_RATE_LIMIT_WINDOW_MS", "60000")),
+  storage: rate_limit_storage
 }
+
+config :pulse_ops,
+       :job_retention_pruning_interval_ms,
+       String.to_integer(System.get_env("JOB_RETENTION_PRUNING_INTERVAL_MS", "86400000"))
+
+if config_env() != :test do
+  webhook_allowed_hosts =
+    System.get_env("WEBHOOK_ALLOWED_HOSTS", "")
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+
+  config :pulse_ops, :webhook_security, %{
+    allowed_hosts: webhook_allowed_hosts,
+    allow_http: System.get_env("WEBHOOK_ALLOW_HTTP") in ["true", "1"],
+    allow_private_networks: System.get_env("WEBHOOK_ALLOW_PRIVATE_NETWORKS") in ["true", "1"],
+    resolve_dns: System.get_env("WEBHOOK_RESOLVE_DNS", "true") not in ["false", "0"],
+    circuit_breaker: %{
+      failure_threshold:
+        String.to_integer(System.get_env("WEBHOOK_CIRCUIT_FAILURE_THRESHOLD", "5")),
+      reset_after_ms: String.to_integer(System.get_env("WEBHOOK_CIRCUIT_RESET_AFTER_MS", "60000"))
+    }
+  }
+end
 
 if otlp_endpoint = System.get_env("OTEL_EXPORTER_OTLP_ENDPOINT") do
   config :opentelemetry,

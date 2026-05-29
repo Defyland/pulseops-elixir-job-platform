@@ -74,12 +74,14 @@ defmodule PulseOps.Jobs.Telemetry do
   end
 
   def handle_event([:oban, :job, :stop], measurements, metadata, _config) do
+    status = terminal_state(metadata.state)
+
     persist_terminal_event(
       measurements,
       metadata,
-      terminal_state(metadata.state),
+      status,
       metadata.result,
-      nil
+      terminal_error_details(status, metadata.result)
     )
   end
 
@@ -169,9 +171,16 @@ defmodule PulseOps.Jobs.Telemetry do
   end
 
   defp terminal_state(:success), do: "succeeded"
+  defp terminal_state(:discard), do: "dead_lettered"
   defp terminal_state(:cancelled), do: "cancelled"
   defp terminal_state(:snoozed), do: "retryable"
   defp terminal_state(_), do: "succeeded"
+
+  defp terminal_error_details("dead_lettered", {:discard, reason}) do
+    %{kind: :discard, reason: reason}
+  end
+
+  defp terminal_error_details(_status, _result), do: nil
 
   defp exception_state(:discard), do: "dead_lettered"
   defp exception_state(:cancelled), do: "cancelled"
@@ -191,6 +200,8 @@ defmodule PulseOps.Jobs.Telemetry do
   defp format_error_kind(%{kind: kind}), do: to_string(kind)
 
   defp format_error_message(nil), do: nil
+
+  defp format_error_message(%{reason: reason}) when is_binary(reason), do: reason
 
   defp format_error_message(%{reason: reason}) do
     Exception.message(reason)

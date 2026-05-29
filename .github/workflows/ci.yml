@@ -72,4 +72,19 @@ jobs:
         run: npx @redocly/cli lint openapi.yaml
 
       - name: Validate Docker build
-        run: docker build .
+        run: docker build -t pulseops-ci:${{ github.sha }} .
+
+      - name: Generate image SBOM
+        uses: anchore/sbom-action@v0.24.0
+        with:
+          image: pulseops-ci:${{ github.sha }}
+          artifact-name: pulseops-sbom.spdx.json
+
+      - name: Container vulnerability scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: pulseops-ci:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"

@@ -5,6 +5,7 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
 
   alias PulseOps.Fixtures
   alias PulseOps.Jobs
+  alias PulseOps.Jobs.WebhookCircuitBreaker
 
   test "executes noop jobs and records attempts and events" do
     %{organization: organization} = Fixtures.organization_fixture()
@@ -76,6 +77,39 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
 
     assert {:ok, job} = Jobs.get_job(organization, job.id)
     assert job.status == "succeeded"
+  end
+
+  test "dead-letters webhook jobs that violate egress policy" do
+    previous = Application.get_env(:pulse_ops, :webhook_security)
+
+    Application.put_env(:pulse_ops, :webhook_security, %{
+      allowed_hosts: [],
+      allow_http: true,
+      allow_private_networks: false,
+      resolve_dns: false,
+      circuit_breaker: %{failure_threshold: 2, reset_after_ms: 250}
+    })
+
+    on_exit(fn ->
+      Application.put_env(:pulse_ops, :webhook_security, previous)
+      WebhookCircuitBreaker.reset!()
+    end)
+
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    job =
+      Fixtures.job_fixture(organization, %{
+        "worker" => "webhook",
+        "payload" => %{
+          "url" => "http://127.0.0.1:4000/hooks/jobs",
+          "body" => %{"job" => "payload"}
+        }
+      })
+
+    assert %{discard: 1} = Oban.drain_queue(queue: "default")
+    assert {:ok, job} = Jobs.get_job(organization, job.id)
+    assert job.status == "dead_lettered"
+    assert job.last_error =~ "private network"
   end
 
   test "captures timeouts as retryable failures" do

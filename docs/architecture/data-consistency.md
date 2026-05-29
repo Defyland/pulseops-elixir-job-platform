@@ -39,6 +39,26 @@
 - This is a safety net for overload or deploy windows where the Oban terminal
   event completed but persistence of the mirrored platform state was missed.
 
+### Retention pruning
+
+- `PulseOps.Jobs.prune_expired_jobs/1` deletes terminal job history after each
+  tenant's `organization.retention_days` window.
+- Only `succeeded`, `dead_lettered`, and `cancelled` jobs are pruned. Active
+  `queued`, `running`, and `retryable` jobs are intentionally preserved even if
+  old.
+- Pruning removes `job_events`, `job_attempts`, matching `oban_jobs`, and the
+  public `jobs` row in one database transaction.
+- `PulseOps.Jobs.RetentionPruner` schedules the operation in production
+  runtime children.
+
+### Distributed rate limiting
+
+- Local development can keep `API_RATE_LIMIT_STORAGE=ets`.
+- Production should set `API_RATE_LIMIT_STORAGE=postgres` so every app node
+  increments the same `(identifier, bucket)` row.
+- `rate_limit_buckets` uses an atomic PostgreSQL upsert and expires old buckets
+  through the limiter cleanup cycle.
+
 ## Constraints and indexes
 
 ### Unique constraints
@@ -51,6 +71,7 @@
 - `jobs.organization_id + idempotency_key` when present
 - `job_attempts.job_id + attempt`
 - `job_attempts.oban_job_id + attempt`
+- `rate_limit_buckets.identifier + bucket`
 
 ### Foreign keys
 
@@ -67,6 +88,7 @@
 - queue/status composite indexes for queue depth inspection
 - scheduled-at index for job scheduling and replay
 - per-job event and attempt indexes for audit retrieval
+- `rate_limit_buckets.expires_at_ms` for cleanup
 
 ## Isolation assumptions
 

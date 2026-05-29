@@ -24,8 +24,10 @@ production launch, see
 - Runtime secrets are read from environment variables in `config/runtime.exs`.
 - PostgreSQL migrations live in `priv/repo/migrations`.
 - Health and readiness endpoints are split as `/healthz` and `/readyz`.
+- A concrete Fly.io deployment reference lives in `ops/deploy/fly`.
 - The CI workflow validates formatting, compilation, static analysis, security,
-  dependency audit, tests with coverage, OpenAPI linting, and Docker build.
+  dependency audit, tests with coverage, OpenAPI linting, Docker build, SBOM
+  generation, and container vulnerability scan output.
 - Dependabot is configured for Mix dependencies and GitHub Actions.
 
 ## Observability Readiness
@@ -36,7 +38,9 @@ production launch, see
 - Prometheus metrics expose request, query, job lifecycle, queue depth, and VM
   memory signals.
 - Grafana dashboard JSON is checked in under `ops/grafana`.
-- Runbooks document timeout, dead-letter, and stale `running` job triage.
+- Prometheus alert rules are checked in under `ops/prometheus/alerts.yml`.
+- Runbooks document timeout, dead-letter, restore drills, secret rotation,
+  incident response, and disaster recovery.
 
 ## Data Readiness
 
@@ -45,19 +49,23 @@ production launch, see
 - Job lifecycle writes append audit events.
 - Oban terminal state is reconciled back into the public job model if telemetry
   persistence is missed.
+- Terminal job history is pruned by tenant retention policy.
+- Rate limiting can be backed by PostgreSQL for multi-node deployments.
 - Rollback strategy favors application redeploy before destructive schema
   rollback.
 
 ## Scaling Limits
 
-- The current rate limiter is node-local ETS. Multi-node deployments need a
-  shared limiter or sticky routing.
+- PostgreSQL-backed rate limiting is sufficient for moderate multi-node
+  deployments. Extremely high request volume should move this concern to Redis
+  or an API gateway.
 - Queue concurrency is synchronized into Oban queues, but per-tenant fairness
   beyond queue configuration is not yet adaptive.
-- Webhook execution lacks egress allowlisting, circuit breaking, and per-host
-  concurrency limits.
+- Webhook egress has allowlisting, private-network blocking, DNS validation,
+  and a node-local circuit breaker. Per-host distributed concurrency limits are
+  still a follow-up.
 - Payload encryption at rest is not implemented.
-- Retention pruning is documented in the roadmap but not implemented.
+- DR is documented, but multi-region restore automation is not implemented.
 
 ## Rollback Plan
 
@@ -83,12 +91,13 @@ production launch, see
 - Review `benchmarks/results/local-baseline.md`
 - Confirm `DATABASE_URL`, `SECRET_KEY_BASE`, and optional
   `OTEL_EXPORTER_OTLP_ENDPOINT` are present in the target environment
+- Confirm `WEBHOOK_ALLOWED_HOSTS` is set before enabling webhook jobs for real
+  tenants.
+- Confirm PostgreSQL backup/PITR and restore drill evidence exists.
 
 ## Next Production Investments
 
-- Add distributed rate limiting.
-- Add retention pruning jobs.
-- Add webhook egress allowlist and retry backoff policy per destination.
 - Add tenant-scoped API key permissions.
-- Add deployment manifests for a concrete platform such as Fly.io, ECS, or
-  Kubernetes.
+- Add payload encryption at rest.
+- Add distributed webhook circuit breaker/concurrency enforcement.
+- Add automated restore drills and release provenance attestation.

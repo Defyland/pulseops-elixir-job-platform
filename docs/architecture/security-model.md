@@ -52,6 +52,9 @@ while preserving a small operational surface for the platform team.
 - `PulseOpsWeb.Plugs.ApiRateLimit` enforces a configurable request budget.
 - Public routes are rate-limited by caller IP.
 - Authenticated routes are rate-limited by API key identifier.
+- Local development can use ETS-backed counters.
+- Production can set `API_RATE_LIMIT_STORAGE=postgres` to share rate-limit
+  buckets across application nodes through the `rate_limit_buckets` table.
 
 ### Input validation and execution safety
 
@@ -60,12 +63,17 @@ while preserving a small operational surface for the platform team.
 - Job creation rejects malformed ISO8601 timestamps.
 - The worker layer only executes supported handlers (`noop`, `flaky`, `crash`,
   `sleep`, `webhook`).
+- Webhook workers reject non-HTTPS destinations by default, block private
+  network targets, support explicit host allowlists, resolve DNS before egress,
+  and use a per-host circuit breaker for repeated failures.
 
 ### Audit logging
 
 - Every lifecycle mutation writes immutable `job_events`.
 - Request and correlation IDs are emitted in structured logs and error payloads.
 - Outbound webhook delivery propagates `x-correlation-id`.
+- Policy-discarded webhook jobs persist the discard reason in public job error
+  metadata for operator audit.
 
 ### Secret management
 
@@ -73,10 +81,13 @@ while preserving a small operational surface for the platform team.
   `SECRET_KEY_BASE`, and `OTEL_EXPORTER_OTLP_ENDPOINT`.
 - Example values are documented in [.env.example](../../.env.example).
 - No plaintext API key secret is persisted after issuance.
+- Rotation procedure is documented in
+  [docs/runbooks/secret-rotation.md](../runbooks/secret-rotation.md).
 
 ## Residual risk and follow-up
 
 - API keys are bearer credentials with no scoped permissions yet.
 - Payload encryption at rest is not implemented in this slice.
-- Webhook egress allowlisting is not implemented yet.
 - Key rotation is manual through create-and-revoke instead of scheduled rotation.
+- The webhook circuit breaker is node-local; a very large deployment should
+  centralize it in Redis, PostgreSQL, or the egress gateway.

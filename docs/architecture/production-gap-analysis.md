@@ -10,8 +10,8 @@ production-operated service.
 ## Current Readiness Level
 
 - Challenge readiness: ready.
-- Single-node internal pilot: plausible after deployment manifests and managed
-  PostgreSQL are added.
+- Single-node internal pilot: plausible after managed PostgreSQL and secrets are
+  configured for the target environment.
 - Multi-tenant customer production: not yet ready.
 - Regulated customer production: not yet ready.
 
@@ -25,35 +25,36 @@ production-operated service.
 - Idempotent job creation and append-only lifecycle events.
 - Health, readiness, Prometheus metrics, structured logs, OpenTelemetry setup,
   Grafana dashboard JSON, and operational runbooks.
+- Deployment target and infrastructure as code exists as a concrete Fly.io
+  reference under `ops/deploy/fly`.
+- Distributed rate limiting through PostgreSQL-backed buckets.
+- Webhook egress hardening with HTTPS enforcement, allowlists, DNS validation,
+  private-network blocking, and circuit breaking.
+- Retention pruning for terminal job history by tenant policy.
+- Prometheus alert rules for HTTP errors, queue depth, dead letters, and job
+  duration.
 - CI for formatting, compile warnings, Credo, Sobelow, dependency audit, tests
-  with coverage, OpenAPI linting, and Docker build.
+  with coverage, OpenAPI linting, Docker build, SBOM generation, and container
+  vulnerability scan output.
 - Dependabot coverage for Mix dependencies and GitHub Actions.
 
 ## P0 Before Real Customer Traffic
 
 These are launch blockers for a real production service:
 
-- Deployment target and infrastructure as code. The repository needs explicit
-  Fly.io, ECS, Kubernetes, or similar manifests, including app, worker,
-  networking, secrets, logs, metrics, and database connectivity.
 - Managed PostgreSQL operations. Define backups, point-in-time recovery,
   restore drills, connection limits, maintenance windows, and migration
   ownership.
 - Secret management. Move from environment-variable examples to a concrete
   secret store such as AWS Secrets Manager, SSM, Doppler, Vault, or platform
   secrets with rotation procedures.
-- Distributed rate limiting. The current ETS limiter is correct for a single
-  node; multi-node deployments need Redis, database-backed counters, or gateway
-  enforcement.
-- Webhook egress hardening. Add allowlists, DNS rebinding protection, SSRF
-  protection, per-host concurrency, circuit breakers, and destination-level
-  backoff.
-- Retention pruning. Implement scheduled deletion/archival for job history
-  based on tenant retention policy.
-- Alerting. Convert SLO indicators into concrete alerts for 5xx rate, queue
-  depth, job age, dead-letter volume, database saturation, and worker crashes.
-- Container and supply-chain scanning. Add image vulnerability scanning, SBOM
-  generation, reviewed base-image updates, and release artifact provenance.
+- Alert routing. Prometheus rules exist, but a real PagerDuty/Opsgenie route,
+  ownership schedule, and notification policy must be configured.
+- Container and supply-chain policy. CI generates SBOM and scan evidence, but
+  release provenance/attestation and an explicit blocking policy still need to
+  be defined for production releases.
+- Webhook egress scaling. Policy enforcement exists, but very large
+  deployments should centralize circuit breaker and per-host concurrency limits.
 
 ## P1 Shortly After Launch
 
@@ -69,8 +70,8 @@ the service scales:
 - Zero-downtime migration playbook for large tables and Oban queue changes.
 - Multi-region disaster recovery objectives and restore automation.
 - Audit export pipeline for security reviews and customer compliance requests.
-- Concrete incident process: severity levels, paging ownership, postmortem
-  template, and customer communication workflow.
+- Incident process integration with real paging ownership and customer
+  communication channels.
 
 ## P2 Hardening
 
@@ -98,9 +99,9 @@ It should not be presented as:
 
 ## Next Implementation Order
 
-1. Add deployment manifests for one target platform.
-2. Add managed PostgreSQL backup/restore documentation and drills.
-3. Replace ETS rate limiting with a distributed limiter.
-4. Implement retention pruning.
-5. Add container scanning and SBOM generation to CI.
-6. Add alert rules and dashboard provisioning for a real metrics backend.
+1. Execute a managed PostgreSQL restore drill against the deployment target.
+2. Add production secret manager wiring and rotation ownership.
+3. Define blocking supply-chain policy and release provenance.
+4. Add distributed webhook concurrency controls at gateway or shared-storage
+   layer.
+5. Add payload encryption at rest if job payloads can contain customer secrets.

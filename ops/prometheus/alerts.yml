@@ -1,0 +1,46 @@
+groups:
+  - name: pulseops-slo
+    rules:
+      - alert: PulseOpsHighHttp5xxRate
+        expr: |
+          sum(rate(phoenix_router_dispatch_stop_count{status=~"5.."}[5m])) > 0.01
+        for: 10m
+        labels:
+          severity: page
+          service: pulse_ops
+        annotations:
+          summary: PulseOps HTTP 5xx rate is above the SLO burn threshold
+          runbook: docs/runbooks/incident-response.md
+
+      - alert: PulseOpsQueueDepthHigh
+        expr: |
+          sum(pulse_ops_queue_depth{status="queued"}) by (queue) > 100
+        for: 15m
+        labels:
+          severity: page
+          service: pulse_ops
+        annotations:
+          summary: PulseOps queue depth is high for {{ $labels.queue }}
+          runbook: docs/runbooks/timeout-and-dead-letter.md
+
+      - alert: PulseOpsDeadLetterRateHigh
+        expr: |
+          sum(rate(pulse_ops_job_stop_count{status="dead_lettered"}[5m])) by (queue) > 0.05
+        for: 10m
+        labels:
+          severity: page
+          service: pulse_ops
+        annotations:
+          summary: PulseOps dead-letter rate is elevated for {{ $labels.queue }}
+          runbook: docs/runbooks/incident-response.md
+
+      - alert: PulseOpsJobExecutionP95High
+        expr: |
+          histogram_quantile(0.95, sum(rate(pulse_ops_job_stop_duration_bucket[5m])) by (le, queue)) > 5000
+        for: 15m
+        labels:
+          severity: ticket
+          service: pulse_ops
+        annotations:
+          summary: PulseOps job execution p95 is above 5 seconds for {{ $labels.queue }}
+          runbook: docs/runbooks/timeout-and-dead-letter.md

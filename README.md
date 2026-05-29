@@ -13,6 +13,8 @@ Evaluator entrypoints:
 - [docs/architecture/production-readiness.md](docs/architecture/production-readiness.md)
 - [docs/architecture/production-gap-analysis.md](docs/architecture/production-gap-analysis.md)
 - [docs/observability/evidence.md](docs/observability/evidence.md)
+- [ops/deploy/fly/README.md](ops/deploy/fly/README.md)
+- [ops/prometheus/alerts.yml](ops/prometheus/alerts.yml)
 - [CHANGELOG.md](CHANGELOG.md)
 - `make ci`
 - `make docker-build`
@@ -39,6 +41,10 @@ Teams usually start background processing with generic workers and little produc
 - Retry and cancel endpoints
 - Health, readiness, and Prometheus metrics endpoints
 - OpenTelemetry instrumentation for Phoenix, Ecto, Bandit, and Oban
+- PostgreSQL-backed distributed rate limiting for multi-node deployments
+- Tenant retention pruning for terminal job history
+- Webhook egress policy with allowlists, private-network blocking, DNS checks,
+  and circuit breaking
 
 ## Architecture overview
 
@@ -105,6 +111,7 @@ Tables:
 - `queues`
 - `jobs`
 - `job_attempts`
+- `rate_limit_buckets`
 - Oban-managed `oban_jobs`
 - `job_events`
 
@@ -116,6 +123,7 @@ Important constraints:
 - unique `jobs.idempotency_key` per organization when present
 - unique `jobs.external_ref` per organization when present
 - unique attempt number per job
+- unique rate-limit bucket per identifier/window
 
 More detail:
 
@@ -130,6 +138,8 @@ The repository includes:
 - request tests for organization and job endpoints
 - authorization tests for tenant isolation
 - async worker tests for success, crash, dead-letter, webhook delivery, and timeout budget failures
+- production-readiness tests for retention pruning, PostgreSQL rate limiting,
+  webhook egress policy, and webhook circuit breaking
 
 Run `mix test` to execute the suite.
 
@@ -157,15 +167,19 @@ PulseOps exposes:
 - Grafana dashboard definition at [ops/grafana/dashboards/pulseops-dashboard.json](ops/grafana/dashboards/pulseops-dashboard.json)
 - Captured demo metrics, structured log examples, and dashboard preview in
   [docs/observability/evidence.md](docs/observability/evidence.md)
+- Prometheus alert rules at [ops/prometheus/alerts.yml](ops/prometheus/alerts.yml)
 
 ## Security considerations
 
 - API key authentication through `x-api-key`
 - tenant isolation enforced on every organization-scoped query
-- request rate limiting through an ETS-backed limiter
+- request rate limiting through ETS locally or PostgreSQL-backed buckets in
+  multi-node production
 - no secret values persisted in plaintext; API keys are stored as SHA-256 digests
 - explicit validation for queue names, retry ceilings, time budgets, and job payload structure
 - correlation IDs propagated into webhook requests for auditability
+- webhook execution defaults to HTTPS, allowlists, private-network blocking,
+  DNS checks, and circuit breaking
 - Sobelow and dependency audit checks in CI
 
 Supporting docs:
@@ -178,6 +192,12 @@ Supporting docs:
 - Domain queues are modeled explicitly, but this slice keeps execution on top of Oban instead of introducing RabbitMQ. That reduces infrastructure while still demonstrating persistent retries and dead letters.
 - API key hashing uses SHA-256 because the tokens are high-entropy random secrets. A password-style adaptive hash was not necessary for this slice.
 - Timeout failure tests simulate budget overruns at the domain layer to keep deterministic coverage in manual Oban test mode.
+- PostgreSQL-backed rate limiting was chosen over Redis for this challenge
+  because PostgreSQL is already required, keeps the local platform smaller, and
+  still proves shared limiter semantics across app nodes.
+- Webhook egress is deliberately policy-first: unsafe destinations are
+  discarded instead of retried because SSRF violations are not transient
+  delivery failures.
 
 See ADRs:
 
@@ -246,7 +266,6 @@ make ci
 ## Roadmap
 
 - add queue pause/resume endpoints instead of requiring a generic patch
-- add retention pruning for `jobs`, `job_attempts`, and `job_events`
 - add bulk replay of dead-lettered jobs
 - add JWT or workload-identity auth for internal service-to-service traffic
 - add RabbitMQ ingress adapter for external publishers

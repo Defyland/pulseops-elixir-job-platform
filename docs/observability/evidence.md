@@ -44,6 +44,16 @@ These are the signals used by the Grafana dashboard:
 - `pulse_ops_job_stop_duration_bucket`: p95 execution duration
 - `pulse_ops_queue_depth`: queue backlog by queue and status
 
+## Alert Evidence
+
+Prometheus alert rules are checked in at
+[`ops/prometheus/alerts.yml`](../../ops/prometheus/alerts.yml). They cover:
+
+- sustained HTTP 5xx rate
+- high queued job depth
+- elevated dead-letter rate
+- high p95 job execution duration
+
 ## Structured Log Evidence
 
 The dev logger includes request and domain metadata. A worker completion log

@@ -17,8 +17,9 @@ surface first, then verify the engineering evidence.
   OpenTelemetry setup, and a Grafana dashboard are included.
 - Security: threat model, authorization matrix, rate limiting, validation,
   secret handling, tenant isolation, and audit logging are explicit.
-- Production thinking: performance baselines, runbooks, data consistency notes,
-  CI gates, Docker build, and operational trade-offs are documented.
+- Production thinking: retention pruning, PostgreSQL rate limiting, webhook
+  egress policy, alert rules, deployment reference, runbooks, CI gates, SBOM,
+  and operational trade-offs are documented.
 
 ## Five-Minute Review
 
@@ -46,6 +47,10 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 - Security: `docs/architecture/security-model.md`
 - Authorization matrix: `docs/api/authorization-matrix.md`
 - Runbook: `docs/runbooks/timeout-and-dead-letter.md`
+- Restore drill: `docs/runbooks/postgres-restore-drill.md`
+- Secret rotation: `docs/runbooks/secret-rotation.md`
+- Deploy reference: `ops/deploy/fly/README.md`
+- Prometheus alerts: `ops/prometheus/alerts.yml`
 - Production readiness: `docs/architecture/production-readiness.md`
 - 100% production gap analysis:
   `docs/architecture/production-gap-analysis.md`
@@ -61,7 +66,10 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 - Idempotency, tenant isolation, and terminal-state reconciliation are enforced
   with tests instead of being described only in prose.
 - CI validates formatting, compilation, Credo, Sobelow, dependency audit,
-  coverage, OpenAPI linting, and Docker build.
+  coverage, OpenAPI linting, Docker build, SBOM generation, and image scanning.
+- Production readiness is represented in code, not only prose: retention
+  pruning, PostgreSQL-backed rate limits, webhook egress controls, and circuit
+  breaker behavior have tests.
 - Performance work includes smoke, load, stress, and spike profiles with
   measured latency, throughput, error rate, and runtime notes.
 - The docs name trade-offs and residual risk directly instead of implying the
@@ -76,5 +84,6 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
   PostgreSQL-backed execution.
 - OAuth/JWT support is deferred; high-entropy API keys are enough for this
   backend challenge.
-- Payload encryption at rest and webhook egress allowlisting are documented
-  follow-ups.
+- Payload encryption at rest is a documented follow-up.
+- The checked-in deployment target is a reference manifest, not a hosted SaaS
+  instance with managed database, paging, and DR already operated.

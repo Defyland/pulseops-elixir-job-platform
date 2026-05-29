@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- PostgreSQL-backed distributed rate limiting with cleanup of expired buckets.
+- Tenant retention pruning for terminal jobs, attempts, events, and matching
+  Oban rows.
+- Webhook egress hardening with HTTPS enforcement, host allowlists,
+  private-network blocking, DNS validation, and circuit breaking.
+- Fly.io deployment reference, Prometheus alert rules, restore drill, secret
+  rotation, incident response, and disaster recovery runbooks.
+- CI SBOM generation and container vulnerability scan evidence.
+- Release migration helper for production deploys.
+
+### Fixed
+
+- Persisted Oban discard results as `dead_lettered` platform jobs instead of
+  incorrectly treating them as success.
+
 ## 0.1.0 - 2026-05-29
 
 ### Added
@@ -46,7 +65,6 @@
 
 ### Known Follow-Ups
 
-- Distributed rate limiting for multi-node deployments.
-- Retention pruning for job history.
-- Webhook egress allowlisting and per-destination circuit breaking.
 - Tenant-scoped API key permissions.
+- Payload encryption at rest for sensitive job payloads.
+- Distributed webhook concurrency controls for high-volume deployments.

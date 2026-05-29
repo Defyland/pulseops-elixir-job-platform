@@ -19,6 +19,7 @@ defmodule PulseOps.Application do
         PulseOps.Repo,
         {Oban, Application.fetch_env!(:pulse_ops, Oban)},
         PulseOps.RateLimiter,
+        PulseOps.Jobs.WebhookCircuitBreaker,
         {DNSCluster, query: Application.get_env(:pulse_ops, :dns_cluster_query) || :ignore},
         {Phoenix.PubSub, name: PulseOps.PubSub}
       ] ++
@@ -43,7 +44,7 @@ defmodule PulseOps.Application do
     if Application.get_env(:pulse_ops, Oban, [])[:testing] == :manual do
       []
     else
-      [PulseOps.Queues.Provisioner, PulseOps.Jobs.Reconciler]
+      [PulseOps.Queues.Provisioner, PulseOps.Jobs.Reconciler, PulseOps.Jobs.RetentionPruner]
     end
   end
 end

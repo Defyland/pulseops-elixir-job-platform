@@ -60,6 +60,13 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/observability/dashboard-preview.svg
     docs/observability/evidence.md
     docs/runbooks/timeout-and-dead-letter.md
+    docs/runbooks/postgres-restore-drill.md
+    docs/runbooks/secret-rotation.md
+    docs/runbooks/incident-response.md
+    docs/runbooks/disaster-recovery.md
+    ops/prometheus/alerts.yml
+    ops/deploy/fly/fly.toml
+    ops/deploy/fly/README.md
   )
 
   test "general project spec is represented by executable compliance tests" do
@@ -114,7 +121,14 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     )
 
     Enum.each(
-      ["Operational Contract", "Deployment Readiness", "Scaling Limits", "Rollback Plan"],
+      [
+        "Operational Contract",
+        "Deployment Readiness",
+        "Scaling Limits",
+        "Rollback Plan",
+        "PostgreSQL-backed rate limiting",
+        "Terminal job history is pruned"
+      ],
       &assert_contains!(readiness, &1)
     )
 
@@ -214,6 +228,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "test/pulse_ops_web/controllers/queue_controller_test.exs",
         "test/pulse_ops/jobs/execution_worker_test.exs",
         "test/pulse_ops/jobs/reconciler_test.exs",
+        "test/pulse_ops/jobs/retention_pruner_test.exs",
+        "test/pulse_ops/jobs/webhook_security_test.exs",
         "test/pulse_ops_web/controllers/error_json_test.exs",
         "test/pulse_ops/rate_limiter_test.exs",
         "test/pulse_ops/queues/provisioner_test.exs"
@@ -224,9 +240,17 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     worker_tests = read!("test/pulse_ops/jobs/execution_worker_test.exs")
 
     Enum.each(
-      ["dead-letters", "correlation ids", "timeouts", "retryable"],
+      ["dead-letters", "correlation ids", "timeouts", "retryable", "egress policy"],
       &assert_contains!(worker_tests, &1)
     )
+
+    rate_limiter_tests = read!("test/pulse_ops/rate_limiter_test.exs")
+    retention_tests = read!("test/pulse_ops/jobs/retention_pruner_test.exs")
+    webhook_tests = read!("test/pulse_ops/jobs/webhook_security_test.exs")
+
+    assert_contains!(rate_limiter_tests, "PostgreSQL-backed buckets")
+    assert_contains!(retention_tests, "retention window")
+    assert_contains!(webhook_tests, "private network")
   end
 
   test "CI workflow validates formatting, lint, security, tests, OpenAPI, coverage, and Docker" do
@@ -245,10 +269,14 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "actions/checkout@v6",
         "actions/setup-node@v6",
         "actions/upload-artifact@v7",
+        "anchore/sbom-action@v0.24.0",
+        "aquasecurity/trivy-action@v0.36.0",
         "otp-version: \"29.0\"",
         "npx @redocly/cli lint openapi.yaml",
-        "docker build .",
-        "fetch-depth: 0"
+        "docker build -t pulseops-ci:${{ github.sha }} .",
+        "fetch-depth: 0",
+        "pulseops-sbom.spdx.json",
+        "exit-code: \"0\""
       ],
       &assert_contains!(ci, &1)
     )
@@ -283,7 +311,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "Distributed rate limiting",
         "Webhook egress hardening",
         "Retention pruning",
-        "Container and supply-chain scanning"
+        "Container and supply-chain policy"
       ],
       &assert_contains!(gap_analysis, &1)
     )
@@ -291,6 +319,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
   test "observability baseline is implemented and documented" do
     dashboard = read!("ops/grafana/dashboards/pulseops-dashboard.json")
+    alerts = read!("ops/prometheus/alerts.yml")
     evidence = read!("docs/observability/evidence.md")
     preview = read!("docs/observability/dashboard-preview.svg")
     telemetry = read!("lib/pulse_ops_web/telemetry.ex")
@@ -322,6 +351,9 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     )
 
     assert_contains!(dashboard, "pulse_ops_job_stop_count{status=\\\"succeeded\\\"}[5m]")
+    assert_contains!(alerts, "PulseOpsHighHttp5xxRate")
+    assert_contains!(alerts, "PulseOpsDeadLetterRateHigh")
+    assert_contains!(evidence, "Alert Evidence")
     refute dashboard =~ "pulse_ops_job_stop_count_total"
     assert_contains!(preview, "PulseOps Operational Dashboard")
   end
@@ -366,7 +398,9 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "Input validation",
         "Secret management",
         "Tenant isolation",
-        "Audit logging"
+        "Audit logging",
+        "PostgreSQL",
+        "Webhook"
       ],
       &assert_contains!(security, &1)
     )
@@ -412,6 +446,34 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
     assert_contains!(identity, "Provisioner.sync_queue(queue)")
     assert_contains!(provisioner, "Oban.start_queue")
+  end
+
+  test "production readiness pack has deploy, retention, webhook, and release evidence" do
+    fly = read!("ops/deploy/fly/fly.toml")
+    fly_readme = read!("ops/deploy/fly/README.md")
+    jobs = read!("lib/pulse_ops/jobs.ex")
+    rate_limiter = read!("lib/pulse_ops/rate_limiter.ex")
+    webhook_security = read!("lib/pulse_ops/jobs/webhook_security.ex")
+    webhook_circuit = read!("lib/pulse_ops/jobs/webhook_circuit_breaker.ex")
+    release = read!("lib/pulse_ops/release.ex")
+    compose = read!("docker-compose.yml")
+
+    Enum.each(
+      ["API_RATE_LIMIT_STORAGE = \"postgres\"", "WEBHOOK_ALLOW_PRIVATE_NETWORKS = \"false\""],
+      &assert_contains!(fly, &1)
+    )
+
+    Enum.each(
+      ["fly deploy --config ops/deploy/fly/fly.toml", "PulseOps.Release.migrate()"],
+      &assert_contains!(fly_readme, &1)
+    )
+
+    assert_contains!(jobs, "prune_expired_jobs")
+    assert_contains!(rate_limiter, "allow_postgres")
+    assert_contains!(webhook_security, "private_address?")
+    assert_contains!(webhook_circuit, "circuit_open")
+    assert_contains!(release, "Ecto.Migrator.with_repo")
+    assert_contains!(compose, "./ops/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro")
   end
 
   test "Dockerfile uses a resolvable Elixir base image and builds a release" do

@@ -10,7 +10,15 @@ import Config
 config :pulse_ops,
   ecto_repos: [PulseOps.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
-  api_rate_limit: %{limit: 240, window_ms: 60_000}
+  api_rate_limit: %{limit: 240, window_ms: 60_000, storage: :ets},
+  job_retention_pruning_interval_ms: 86_400_000,
+  webhook_security: %{
+    allowed_hosts: [],
+    allow_http: false,
+    allow_private_networks: false,
+    resolve_dns: true,
+    circuit_breaker: %{failure_threshold: 5, reset_after_ms: 60_000}
+  }
 
 config :pulse_ops, Oban,
   repo: PulseOps.Repo,
