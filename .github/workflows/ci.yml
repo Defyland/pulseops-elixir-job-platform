@@ -81,14 +81,17 @@ jobs:
           artifact-name: pulseops-sbom.spdx.json
 
       - name: Container vulnerability scan
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: pulseops-ci:${{ github.sha }}
-          format: json
-          output: trivy-results.json
-          severity: CRITICAL,HIGH
-          ignore-unfixed: true
-          exit-code: "0"
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/workspace" \
+            aquasec/trivy:0.70.0 image \
+            --ignore-unfixed \
+            --severity CRITICAL,HIGH \
+            --format json \
+            --output /workspace/trivy-results.json \
+            --exit-code 0 \
+            pulseops-ci:${{ github.sha }}
 
       - name: Upload vulnerability scan artifact
         uses: actions/upload-artifact@v7

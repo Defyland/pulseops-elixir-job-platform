@@ -270,7 +270,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "actions/setup-node@v6",
         "actions/upload-artifact@v7",
         "anchore/sbom-action@v0.24.0",
-        "aquasecurity/trivy-action@v0.36.0",
+        "aquasec/trivy:0.70.0",
         "otp-version: \"29.0\"",
         "npx @redocly/cli lint openapi.yaml",
         "docker build -t pulseops-ci:${{ github.sha }} .",
@@ -278,7 +278,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "pulseops-sbom.spdx.json",
         "trivy-results.json",
         "pulseops-trivy",
-        "exit-code: \"0\""
+        "--exit-code 0"
       ],
       &assert_contains!(ci, &1)
     )
