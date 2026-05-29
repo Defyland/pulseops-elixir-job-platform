@@ -1,5 +1,8 @@
 # PulseOps
 
+[![CI](https://github.com/Defyland/pulseops-elixir-job-platform/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Defyland/pulseops-elixir-job-platform/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/tag/Defyland/pulseops-elixir-job-platform?label=release)](https://github.com/Defyland/pulseops-elixir-job-platform/releases)
+
 ## What is this product?
 
 PulseOps is a multi-tenant job execution platform built with Elixir, Phoenix, PostgreSQL, and Oban. It is designed for teams that need a reliable API for enqueueing, tracking, retrying, and auditing critical background jobs such as webhooks, reconciliation tasks, or tenant-specific automation.
@@ -8,6 +11,7 @@ Evaluator entrypoints:
 
 - [docs/evaluator-guide.md](docs/evaluator-guide.md)
 - [docs/architecture/production-readiness.md](docs/architecture/production-readiness.md)
+- [docs/observability/evidence.md](docs/observability/evidence.md)
 - [CHANGELOG.md](CHANGELOG.md)
 - `make ci`
 - `make docker-build`
@@ -149,6 +153,8 @@ PulseOps exposes:
 - `/metrics`
 - queue depth and job lifecycle metrics
 - Grafana dashboard definition at [ops/grafana/dashboards/pulseops-dashboard.json](ops/grafana/dashboards/pulseops-dashboard.json)
+- Captured demo metrics, structured log examples, and dashboard preview in
+  [docs/observability/evidence.md](docs/observability/evidence.md)
 
 ## Security considerations
 

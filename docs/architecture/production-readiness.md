@@ -73,6 +73,8 @@ which items remain deliberate follow-ups before a real customer rollout.
 - `make demo`
 - If host port 5432 is already allocated, run local dependencies with
   `POSTGRES_PORT=55432`.
+- Confirm the GitHub Actions badge points to a green `main` workflow run.
+- Publish the release tag, for example `git tag -a v0.1.0 -m "PulseOps v0.1.0"`.
 - Review `benchmarks/results/local-baseline.md`
 - Confirm `DATABASE_URL`, `SECRET_KEY_BASE`, and optional
   `OTEL_EXPORTER_OTLP_ENDPOINT` are present in the target environment

@@ -21,6 +21,9 @@
 - Evaluator guide, production readiness review, `Makefile` shortcuts, and a
   reproducible API demo.
 - `.dockerignore` for smaller and less noisy release build contexts.
+- README CI and release badges for public evaluator signal.
+- Observability evidence with captured demo output, Prometheus samples,
+  structured log examples, and a dashboard preview.
 
 ### Fixed
 
@@ -35,6 +38,8 @@
   removed obsolete Docker Compose metadata.
 - Replaced local absolute filesystem links in public documentation with
   portable repository-relative links.
+- Corrected the Grafana success-rate PromQL query to match the metric emitted by
+  the running `/metrics` endpoint.
 
 ### Known Follow-Ups
 

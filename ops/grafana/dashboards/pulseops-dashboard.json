@@ -14,7 +14,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(pulse_ops_job_stop_count_total{status=\"succeeded\"}[5m]))",
+          "expr": "sum(rate(pulse_ops_job_stop_count{status=\"succeeded\"}[5m]))",
           "legendFormat": "succeeded/sec",
           "refId": "A"
         }

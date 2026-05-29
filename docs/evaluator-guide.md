@@ -28,6 +28,9 @@ make docker-build
 make demo
 ```
 
+On GitHub, the README CI badge links directly to the workflow run history for
+the same checks.
+
 `make demo` starts the local dependencies, creates a tenant through the API,
 enqueues a job, waits for execution, prints lifecycle events, and samples
 Prometheus metrics.
@@ -44,8 +47,10 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 - Authorization matrix: `docs/api/authorization-matrix.md`
 - Runbook: `docs/runbooks/timeout-and-dead-letter.md`
 - Production readiness: `docs/architecture/production-readiness.md`
+- Observability evidence: `docs/observability/evidence.md`
 - Benchmark results: `benchmarks/results/local-baseline.md`
 - Spec compliance tests: `test/spec_compliance/general_project_spec_test.exs`
+- Release notes: `CHANGELOG.md` and the `v0.1.0` tag
 
 ## Senior-Level Signals
 

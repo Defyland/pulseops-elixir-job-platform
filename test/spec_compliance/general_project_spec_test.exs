@@ -34,6 +34,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/benchmarks
     docs/api
     docs/diagrams
+    docs/observability
     docs/runbooks
   )
 
@@ -55,6 +56,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/benchmarks/methodology.md
     docs/benchmarks/latest-results.md
     docs/diagrams/request-and-worker-flows.md
+    docs/observability/dashboard-preview.svg
+    docs/observability/evidence.md
     docs/runbooks/timeout-and-dead-letter.md
   )
 
@@ -92,7 +95,14 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     dockerignore = read!(".dockerignore")
 
     Enum.each(
-      ["docs/evaluator-guide.md", "docs/architecture/production-readiness.md", "make demo"],
+      [
+        "actions/workflows/ci.yml/badge.svg?branch=main",
+        "github/v/tag/Defyland/pulseops-elixir-job-platform",
+        "docs/evaluator-guide.md",
+        "docs/architecture/production-readiness.md",
+        "docs/observability/evidence.md",
+        "make demo"
+      ],
       &assert_contains!(readme, &1)
     )
 
@@ -219,6 +229,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
   test "CI workflow validates formatting, lint, security, tests, OpenAPI, coverage, and Docker" do
     ci = read!(".github/workflows/ci.yml")
+    readme = read!("README.md")
 
     Enum.each(
       [
@@ -235,9 +246,15 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
       ],
       &assert_contains!(ci, &1)
     )
+
+    assert_contains!(readme, "actions/workflows/ci.yml/badge.svg?branch=main")
+    assert_contains!(readme, "github/v/tag/Defyland/pulseops-elixir-job-platform")
   end
 
   test "observability baseline is implemented and documented" do
+    dashboard = read!("ops/grafana/dashboards/pulseops-dashboard.json")
+    evidence = read!("docs/observability/evidence.md")
+    preview = read!("docs/observability/dashboard-preview.svg")
     telemetry = read!("lib/pulse_ops_web/telemetry.ex")
     router = read!("lib/pulse_ops_web/router.ex")
     config = read!("config/config.exs") <> read!("config/dev.exs")
@@ -252,6 +269,23 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
 
     assert_file!("ops/grafana/dashboards/pulseops-dashboard.json")
     assert read!("mix.exs") =~ "opentelemetry"
+
+    Enum.each(
+      [
+        "Demo Evidence",
+        "Metrics Evidence",
+        "Structured Log Evidence",
+        "Dashboard Evidence",
+        "pulse_ops_job_stop_count",
+        "pulse_ops_job_stop_duration_bucket",
+        "job.succeeded"
+      ],
+      &assert_contains!(evidence, &1)
+    )
+
+    assert_contains!(dashboard, "pulse_ops_job_stop_count{status=\\\"succeeded\\\"}[5m]")
+    refute dashboard =~ "pulse_ops_job_stop_count_total"
+    assert_contains!(preview, "PulseOps Operational Dashboard")
   end
 
   test "performance baseline publishes k6 scenarios and measured results" do

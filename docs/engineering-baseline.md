@@ -33,6 +33,11 @@ fully complete.
 - External evaluation entrypoints exist through
   [docs/evaluator-guide.md](evaluator-guide.md), `Makefile`, `scripts/demo.sh`,
   and [production-readiness.md](architecture/production-readiness.md).
+- Public evaluation signals include README badges for GitHub Actions and the
+  latest release tag.
+- Observability evidence is captured in
+  [docs/observability/evidence.md](observability/evidence.md), including demo
+  output, metrics, structured logs, and a dashboard preview.
 
 ## Execution plan
 
@@ -56,6 +61,9 @@ fully complete.
   resolution checks to the spec compliance suite.
 - Added a reproducible API demo and production readiness review for evaluator
   walkthroughs.
+- Added public CI/release badges and release-tag guidance.
+- Added captured observability evidence and aligned the Grafana success-rate
+  query with the live metric name exposed by `/metrics`.
 
 ### External verification status
 
@@ -66,6 +74,8 @@ fully complete.
 - `make demo` has been verified locally through tenant creation, job enqueue,
   `succeeded` terminal status, lifecycle event output, and Prometheus metric
   sampling.
+- `/metrics` has been sampled locally after a demo run and documented with the
+  matching Grafana PromQL.
 
 ## Definition of done checkpoints
 
