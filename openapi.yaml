@@ -1,0 +1,834 @@
+openapi: 3.1.0
+info:
+  title: PulseOps API
+  version: 0.1.0
+  description: |
+    Multi-tenant job execution API for provisioning organizations, managing queues,
+    and tracking background job execution.
+  license:
+    name: Proprietary
+    identifier: UNLICENSED
+servers:
+  - url: https://{host}
+    description: Environment-specific API base URL
+    variables:
+      host:
+        default: api.pulseops.local
+        description: Override with `localhost:4000` in local development or your deployed host
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: Organizations
+    description: Tenant bootstrap and identity resolution
+  - name: API Keys
+    description: Tenant API credential lifecycle management
+  - name: Queues
+    description: Per-tenant execution lane management
+  - name: Jobs
+    description: Job enqueueing, lifecycle control, and audit inspection
+  - name: Observability
+    description: Health checks and Prometheus scrape surface
+paths:
+  /healthz:
+    get:
+      tags: [Observability]
+      security: []
+      operationId: getHealthz
+      summary: Liveness probe
+      responses:
+        '200':
+          description: API process is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /readyz:
+    get:
+      tags: [Observability]
+      security: []
+      operationId: getReadyz
+      summary: Readiness probe
+      responses:
+        '200':
+          description: Database is reachable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+        '503':
+          description: Dependencies are unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: degraded
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /metrics:
+    get:
+      tags: [Observability]
+      security: []
+      operationId: getMetrics
+      summary: Prometheus scrape endpoint
+      responses:
+        '200':
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/organizations:
+    post:
+      tags: [Organizations]
+      security: []
+      operationId: createOrganization
+      summary: Create a tenant and bootstrap API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organization]
+              properties:
+                organization:
+                  $ref: '#/components/schemas/OrganizationCreate'
+      responses:
+        '201':
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      organization:
+                        $ref: '#/components/schemas/Organization'
+                      default_queue:
+                        $ref: '#/components/schemas/Queue'
+                      bootstrap_api_key:
+                        type: string
+                        example: po_live_590cf7e88c_0d1f4f3d27a4954aa56d0c41f0893d21
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/organizations/me:
+    get:
+      tags: [Organizations]
+      operationId: getCurrentOrganization
+      summary: Resolve the current tenant from the API key
+      responses:
+        '200':
+          description: Authenticated organization
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Organization'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/api-keys:
+    get:
+      tags: [API Keys]
+      operationId: listApiKeys
+      summary: List active and revoked API keys for the tenant
+      responses:
+        '200':
+          description: API keys
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags: [API Keys]
+      operationId: createApiKey
+      summary: Create a new tenant API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [api_key]
+              properties:
+                api_key:
+                  type: object
+                  required: [name]
+                  properties:
+                    name:
+                      type: string
+                      example: ci-runner
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      api_key:
+                        $ref: '#/components/schemas/ApiKey'
+                      token:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/api-keys/{id}:
+    delete:
+      tags: [API Keys]
+      operationId: revokeApiKey
+      summary: Revoke an API key
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '204':
+          description: Key revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/queues:
+    get:
+      tags: [Queues]
+      operationId: listQueues
+      summary: List tenant queues
+      responses:
+        '200':
+          description: Queue list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Queue'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags: [Queues]
+      operationId: createQueue
+      summary: Create a queue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [queue]
+              properties:
+                queue:
+                  $ref: '#/components/schemas/QueueCreate'
+      responses:
+        '201':
+          description: Queue created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Queue'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/queues/{id}:
+    patch:
+      tags: [Queues]
+      operationId: updateQueue
+      summary: Update queue policy or pause state
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [queue]
+              properties:
+                queue:
+                  $ref: '#/components/schemas/QueueUpdate'
+      responses:
+        '200':
+          description: Queue updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Queue'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/jobs:
+    get:
+      tags: [Jobs]
+      operationId: listJobs
+      summary: List jobs
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [queued, running, retryable, succeeded, dead_lettered, cancelled]
+        - in: query
+          name: queue_id
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Jobs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    post:
+      tags: [Jobs]
+      operationId: createJob
+      summary: Create a job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job]
+              properties:
+                job:
+                  $ref: '#/components/schemas/JobCreate'
+      responses:
+        '201':
+          description: Job created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Job'
+                  meta:
+                    type: object
+                    properties:
+                      deduplicated:
+                        type: boolean
+                        example: false
+        '200':
+          description: Duplicate idempotent request resolved to the existing job
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /api/v1/jobs/{id}:
+    get:
+      tags: [Jobs]
+      operationId: getJob
+      summary: Fetch one job with attempts and events
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Job details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Job'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/jobs/{id}/retry:
+    post:
+      tags: [Jobs]
+      operationId: retryJob
+      summary: Retry a failed or dead-lettered job
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Job requeued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Job'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/jobs/{id}/cancel:
+    post:
+      tags: [Jobs]
+      operationId: cancelJob
+      summary: Cancel a queued or retryable job
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Job cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Job'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/v1/jobs/{id}/events:
+    get:
+      tags: [Jobs]
+      operationId: listJobEvents
+      summary: List the audit trail for a job
+      parameters:
+        - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Event stream
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/JobEvent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+  parameters:
+    ResourceId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotFound:
+      description: Resource not found or outside the tenant boundary
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Conflict:
+      description: Resource cannot transition from its current state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    BadRequest:
+      description: Malformed request payload or invalid scheduling input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: Schema validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            missingWorker:
+              value:
+                error:
+                  code: validation_error
+                  message: Request validation failed
+                  details:
+                    worker:
+                      - can't be blank
+                  request_id: F5kPqF0A0E4FGQAAABeB
+                  correlation_id: corr-order-100200
+    RateLimited:
+      description: Caller exceeded the configured request budget
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          examples:
+            tooManyRequests:
+              value:
+                error:
+                  code: rate_limited
+                  message: Too many requests
+                  details:
+                    retry_after_ms: 54823
+                  request_id: F5kPqF0A0E4FGQAAABeB
+                  correlation_id: corr-rate-limit
+  schemas:
+    OrganizationCreate:
+      type: object
+      required: [name, slug]
+      properties:
+        name:
+          type: string
+          example: Northwind Ops
+        slug:
+          type: string
+          example: northwind-ops
+        retention_days:
+          type: integer
+          example: 21
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        retention_days:
+          type: integer
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    ApiKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        key_prefix:
+          type: string
+        revoked_at:
+          type: [string, "null"]
+          format: date-time
+        last_used_at:
+          type: [string, "null"]
+          format: date-time
+        inserted_at:
+          type: string
+          format: date-time
+    QueueCreate:
+      type: object
+      required: [name, concurrency, max_attempts, execution_timeout_ms]
+      properties:
+        name:
+          type: string
+          example: critical_webhooks
+        concurrency:
+          type: integer
+          example: 10
+        max_attempts:
+          type: integer
+          example: 5
+        execution_timeout_ms:
+          type: integer
+          example: 30000
+    QueueUpdate:
+      type: object
+      properties:
+        concurrency:
+          type: integer
+        max_attempts:
+          type: integer
+        execution_timeout_ms:
+          type: integer
+        paused_at:
+          type: [string, "null"]
+          format: date-time
+    Queue:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        concurrency:
+          type: integer
+        max_attempts:
+          type: integer
+        execution_timeout_ms:
+          type: integer
+        paused:
+          type: boolean
+        paused_at:
+          type: [string, "null"]
+          format: date-time
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    JobCreate:
+      type: object
+      required: [worker]
+      properties:
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+          example: default
+        worker:
+          type: string
+          enum: [noop, flaky, crash, sleep, webhook]
+        external_ref:
+          type: string
+          example: order-100200
+        idempotency_key:
+          type: string
+          example: order-100200-payment-webhook
+        correlation_id:
+          type: string
+          example: corr-4fa8b0c
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 9
+        max_attempts:
+          type: integer
+          minimum: 1
+          maximum: 20
+        timeout_ms:
+          type: integer
+          minimum: 100
+          maximum: 300000
+        scheduled_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+          example:
+            url: https://example.com/hooks/orders
+            body:
+              order_id: 100200
+    JobAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        oban_job_id:
+          type: integer
+        attempt:
+          type: integer
+        status:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        finished_at:
+          type: [string, "null"]
+          format: date-time
+        duration_ms:
+          type: [integer, "null"]
+        error_kind:
+          type: [string, "null"]
+        error_message:
+          type: [string, "null"]
+        metadata:
+          type: object
+          additionalProperties: true
+    JobEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        attempt:
+          type: [integer, "null"]
+        event_type:
+          type: string
+        status:
+          type: string
+        correlation_id:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        inserted_at:
+          type: string
+          format: date-time
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        queue_id:
+          type: string
+          format: uuid
+        queue_name:
+          type: string
+        external_ref:
+          type: [string, "null"]
+        worker:
+          type: string
+        status:
+          type: string
+        priority:
+          type: integer
+        payload:
+          type: object
+          additionalProperties: true
+        result:
+          type: [object, "null"]
+          additionalProperties: true
+        idempotency_key:
+          type: [string, "null"]
+        correlation_id:
+          type: string
+        attempt_count:
+          type: integer
+        max_attempts:
+          type: integer
+        timeout_ms:
+          type: integer
+        scheduled_at:
+          type: [string, "null"]
+          format: date-time
+        started_at:
+          type: [string, "null"]
+          format: date-time
+        completed_at:
+          type: [string, "null"]
+          format: date-time
+        discarded_at:
+          type: [string, "null"]
+          format: date-time
+        cancelled_at:
+          type: [string, "null"]
+          format: date-time
+        last_error:
+          type: [string, "null"]
+        last_error_kind:
+          type: [string, "null"]
+        inserted_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobAttempt'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobEvent'
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+            request_id:
+              type: [string, "null"]
+            correlation_id:
+              type: [string, "null"]

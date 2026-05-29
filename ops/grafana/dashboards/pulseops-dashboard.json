@@ -1,0 +1,57 @@
+{
+  "title": "PulseOps Operational Dashboard",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Job Success Rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(pulse_ops_job_stop_count_total{status=\"succeeded\"}[5m]))",
+          "legendFormat": "succeeded/sec",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "p95 Job Duration",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(pulse_ops_job_stop_duration_bucket[5m])) by (le))",
+          "legendFormat": "p95 ms",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "expr": "max by (queue, status) (pulse_ops_queue_depth)",
+          "legendFormat": "{{queue}} {{status}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
+    }
+  ]
+}
