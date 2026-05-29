@@ -27,8 +27,7 @@ production-operated service.
   Grafana dashboard JSON, and operational runbooks.
 - CI for formatting, compile warnings, Credo, Sobelow, dependency audit, tests
   with coverage, OpenAPI linting, and Docker build.
-- Dependabot coverage for Mix dependencies, GitHub Actions, and Docker base
-  images.
+- Dependabot coverage for Mix dependencies and GitHub Actions.
 
 ## P0 Before Real Customer Traffic
 
@@ -54,7 +53,7 @@ These are launch blockers for a real production service:
 - Alerting. Convert SLO indicators into concrete alerts for 5xx rate, queue
   depth, job age, dead-letter volume, database saturation, and worker crashes.
 - Container and supply-chain scanning. Add image vulnerability scanning, SBOM
-  generation, and release artifact provenance.
+  generation, reviewed base-image updates, and release artifact provenance.
 
 ## P1 Shortly After Launch
 

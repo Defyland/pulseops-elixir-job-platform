@@ -26,8 +26,7 @@ production launch, see
 - Health and readiness endpoints are split as `/healthz` and `/readyz`.
 - The CI workflow validates formatting, compilation, static analysis, security,
   dependency audit, tests with coverage, OpenAPI linting, and Docker build.
-- Dependabot is configured for Mix dependencies, GitHub Actions, and Docker
-  base images.
+- Dependabot is configured for Mix dependencies and GitHub Actions.
 
 ## Observability Readiness
 

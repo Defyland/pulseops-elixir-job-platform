@@ -260,7 +260,6 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
       [
         "package-ecosystem: \"mix\"",
         "package-ecosystem: \"github-actions\"",
-        "package-ecosystem: \"docker\"",
         "interval: \"weekly\""
       ],
       &assert_contains!(dependabot, &1)

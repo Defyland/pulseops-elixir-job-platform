@@ -40,8 +40,7 @@ fully complete.
   output, metrics, structured logs, and a dashboard preview.
 - The delta to a fully hosted production service is documented in
   [production-gap-analysis.md](architecture/production-gap-analysis.md).
-- Dependabot is configured for Mix, GitHub Actions, and Docker dependency
-  maintenance.
+- Dependabot is configured for Mix and GitHub Actions dependency maintenance.
 
 ## Execution plan
 
@@ -69,7 +68,7 @@ fully complete.
 - Added captured observability evidence and aligned the Grafana success-rate
   query with the live metric name exposed by `/metrics`.
 - Added a 100% production readiness gap analysis and dependency maintenance
-  automation.
+  automation for application dependencies and GitHub Actions.
 
 ### External verification status
 
