@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Defyland/pulseops-elixir-job-platform/docs/events/job_lifecycle_event.v1.json",
+  "title": "PulseOps Job Lifecycle Event v1",
+  "type": "object",
+  "required": ["event_id", "event_type", "schema_version", "occurred_at", "producer", "organization_id", "queue_name", "job_id", "correlation_id", "payload"],
+  "properties": {
+    "event_id": { "type": "string" },
+    "event_type": { "type": "string", "enum": ["job.created", "job.started", "job.succeeded", "job.failed", "job.dead_lettered", "job.cancelled", "job.retried"] },
+    "schema_version": { "type": "integer", "const": 1 },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "producer": { "type": "string", "const": "pulseops" },
+    "organization_id": { "type": "string" },
+    "queue_name": { "type": "string" },
+    "job_id": { "type": "string" },
+    "correlation_id": { "type": "string" },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}

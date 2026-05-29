@@ -34,6 +34,21 @@ implementation below.
 - A periodic reconciler repairs public jobs stuck in `running` when the matching
   Oban row is already terminal.
 
+## Lifecycle, Retry, DLQ, and Replay Direction
+
+- The public lifecycle language is documented in
+  [docs/events/README.md](../events/README.md).
+- Retry means re-executing the same job while preserving `job_id`,
+  `correlation_id`, attempts, and events.
+- Dead-letter means automatic execution has stopped and operator intent is
+  required before further execution.
+- Replay should be treated as a privileged administrative operation, not as a
+  hidden retry side effect.
+- Replay should require a reason, actor, source job, payload/version review, and
+  replay-specific idempotency key.
+- Policy failures such as webhook SSRF/private-network blocking should not be
+  retried until configuration or destination is corrected.
+
 ## Test Evidence
 
 - `test/pulse_ops/jobs/execution_worker_test.exs` covers success, transient

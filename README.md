@@ -186,6 +186,9 @@ Supporting docs:
 
 - [docs/architecture/security-model.md](docs/architecture/security-model.md)
 - [docs/api/authorization-matrix.md](docs/api/authorization-matrix.md)
+- [docs/events/README.md](docs/events/README.md)
+- [docs/security/threat-model.md](docs/security/threat-model.md)
+- [docs/architecture/deployment-readiness.md](docs/architecture/deployment-readiness.md)
 
 ## Trade-offs and decisions
 
