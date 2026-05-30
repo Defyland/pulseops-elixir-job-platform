@@ -44,9 +44,13 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 - Architecture: `docs/architecture/overview.md`
 - Data consistency: `docs/architecture/data-consistency.md`
 - Messaging: `docs/architecture/messaging.md`
+- Event contracts and replay policy: `docs/events/README.md`
 - Security: `docs/architecture/security-model.md`
+- Threat model: `docs/security/threat-model.md`
 - Authorization matrix: `docs/api/authorization-matrix.md`
+- Event-store decision: `docs/adr/002-job-events-before-event-store.md`
 - Runbook: `docs/runbooks/timeout-and-dead-letter.md`
+- Replay contract drift: `docs/runbooks/job-replay-contract-drift.md`
 - Restore drill: `docs/runbooks/postgres-restore-drill.md`
 - Secret rotation: `docs/runbooks/secret-rotation.md`
 - Deploy reference: `ops/deploy/fly/README.md`

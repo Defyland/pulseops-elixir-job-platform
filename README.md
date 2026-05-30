@@ -205,6 +205,7 @@ Supporting docs:
 See ADRs:
 
 - [docs/adr/001-oban-as-persistent-execution-engine.md](docs/adr/001-oban-as-persistent-execution-engine.md)
+- [docs/adr/002-job-events-before-event-store.md](docs/adr/002-job-events-before-event-store.md)
 
 ## How to run locally
 

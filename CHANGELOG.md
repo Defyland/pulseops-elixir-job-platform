@@ -13,6 +13,8 @@
   rotation, incident response, and disaster recovery runbooks.
 - CI SBOM generation and container vulnerability scan evidence.
 - Release migration helper for production deploys.
+- Job lifecycle event contracts, replay/idempotency policy, event-store ADR,
+  and threat model for admin operations, webhooks, and job execution.
 
 ### Fixed
 

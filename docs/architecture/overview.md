@@ -21,3 +21,12 @@ PulseOps is intentionally split into a small number of coarse-grained modules:
 The public domain state is stored in `jobs`, `job_attempts`, and `job_events`.
 Oban owns the executor-specific scheduling table `oban_jobs`. The split keeps the
 API stable even if the execution backend changes later.
+
+## Lifecycle and replay guidance
+
+Job lifecycle events, retry semantics, dead-letter policy, replay rules, and the
+event-store trade-off are documented separately:
+
+- [docs/events/README.md](../events/README.md)
+- [docs/adr/002-job-events-before-event-store.md](../adr/002-job-events-before-event-store.md)
+- [docs/security/threat-model.md](../security/threat-model.md)

@@ -34,8 +34,10 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/benchmarks
     docs/api
     docs/diagrams
+    docs/events
     docs/observability
     docs/runbooks
+    docs/security
   )
 
   @documentation_files ~w(
@@ -47,23 +49,29 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/api/errors.md
     docs/api/authorization-matrix.md
     docs/adr/001-oban-as-persistent-execution-engine.md
+    docs/adr/002-job-events-before-event-store.md
     docs/architecture/overview.md
     docs/architecture/supervision-tree.md
     docs/architecture/data-consistency.md
     docs/architecture/messaging.md
+    docs/architecture/deployment-readiness.md
     docs/architecture/production-gap-analysis.md
     docs/architecture/production-readiness.md
     docs/architecture/security-model.md
     docs/benchmarks/methodology.md
     docs/benchmarks/latest-results.md
     docs/diagrams/request-and-worker-flows.md
+    docs/events/README.md
+    docs/events/job_lifecycle_event.v1.json
     docs/observability/dashboard-preview.svg
     docs/observability/evidence.md
     docs/runbooks/timeout-and-dead-letter.md
+    docs/runbooks/job-replay-contract-drift.md
     docs/runbooks/postgres-restore-drill.md
     docs/runbooks/secret-rotation.md
     docs/runbooks/incident-response.md
     docs/runbooks/disaster-recovery.md
+    docs/security/threat-model.md
     ops/prometheus/alerts.yml
     ops/deploy/fly/fly.toml
     ops/deploy/fly/README.md
@@ -110,13 +118,24 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "docs/architecture/production-readiness.md",
         "docs/architecture/production-gap-analysis.md",
         "docs/observability/evidence.md",
+        "docs/events/README.md",
+        "docs/security/threat-model.md",
+        "docs/adr/002-job-events-before-event-store.md",
         "make demo"
       ],
       &assert_contains!(readme, &1)
     )
 
     Enum.each(
-      ["Five-Minute Review", "Evidence Map", "Senior-Level Signals", "Known Non-Goals"],
+      [
+        "Five-Minute Review",
+        "Evidence Map",
+        "Senior-Level Signals",
+        "Known Non-Goals",
+        "Event contracts and replay policy",
+        "Threat model",
+        "Event-store decision"
+      ],
       &assert_contains!(evaluator, &1)
     )
 
@@ -416,6 +435,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
   test "messaging and transaction baselines are explicit for the Oban-backed design" do
     messaging = read!("docs/architecture/messaging.md")
     data = read!("docs/architecture/data-consistency.md")
+    events = read!("docs/events/README.md")
+    adr = read!("docs/adr/002-job-events-before-event-store.md")
     identity = read!("lib/pulse_ops/identity.ex")
     provisioner = read!("lib/pulse_ops/queues/provisioner.ex")
 
@@ -427,7 +448,8 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "Dead-letter queue",
         "Message idempotency",
         "Consumer acknowledgement",
-        "Correlation IDs"
+        "Correlation IDs",
+        "Replay should be treated as a privileged administrative operation"
       ],
       &assert_contains!(messaging, &1)
     )
@@ -446,8 +468,57 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
       &assert_contains!(data, &1)
     )
 
+    Enum.each(
+      [
+        "Persisted Job Lifecycle Events",
+        "Worker Operational Events",
+        "Retry Policy",
+        "Dead-Letter Policy",
+        "Idempotency Policy",
+        "Replay Decision Matrix",
+        "Supervision Direction"
+      ],
+      &assert_contains!(events, &1)
+    )
+
+    Enum.each(
+      [
+        "Use Transactional Job Tables and Audit Logs Before a Full Event Store",
+        "When To Keep Transactional Tables + Audit Logs",
+        "When To Introduce An Event Store",
+        "Replay Guidance"
+      ],
+      &assert_contains!(adr, &1)
+    )
+
     assert_contains!(identity, "Provisioner.sync_queue(queue)")
     assert_contains!(provisioner, "Oban.start_queue")
+  end
+
+  test "threat model covers admin replay webhooks and job execution risks" do
+    threat_model = read!("docs/security/threat-model.md")
+    replay_runbook = read!("docs/runbooks/job-replay-contract-drift.md")
+    overview = read!("docs/architecture/overview.md")
+
+    Enum.each(
+      [
+        "Administrative Operations",
+        "Manual Replay",
+        "Webhooks",
+        "Job Execution",
+        "Abuse Cases To Test",
+        "Monitoring Signals",
+        "tenant-scoped authorization",
+        "replay idempotency key",
+        "Webhook jobs cross from PulseOps into untrusted third-party infrastructure"
+      ],
+      &assert_contains!(threat_model, &1)
+    )
+
+    assert_contains!(replay_runbook, "Job Replay Contract Drift")
+    assert_contains!(replay_runbook, "operator identity")
+    assert_contains!(overview, "Lifecycle and replay guidance")
+    assert_contains!(overview, "docs/events/README.md")
   end
 
   test "production readiness pack has deploy, retention, webhook, and release evidence" do
