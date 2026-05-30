@@ -9,7 +9,11 @@ PulseOps is a multi-tenant job execution platform built with Elixir, Phoenix, Po
 
 Evaluator entrypoints:
 
+- [docs/spec-driven/senior-readiness-spec.md](docs/spec-driven/senior-readiness-spec.md)
+- [docs/spec-driven/implementation-plan.md](docs/spec-driven/implementation-plan.md)
+- [docs/spec-driven/verification-report.md](docs/spec-driven/verification-report.md)
 - [docs/evaluator-guide.md](docs/evaluator-guide.md)
+- [docs/engineering-case-study.md](docs/engineering-case-study.md)
 - [docs/architecture/production-readiness.md](docs/architecture/production-readiness.md)
 - [docs/architecture/production-gap-analysis.md](docs/architecture/production-gap-analysis.md)
 - [docs/observability/evidence.md](docs/observability/evidence.md)
@@ -52,7 +56,13 @@ PulseOps is a Phoenix JSON API backed by PostgreSQL. The HTTP layer authenticate
 
 More detail:
 
+- [docs/engineering-case-study.md](docs/engineering-case-study.md)
 - [docs/architecture/overview.md](docs/architecture/overview.md)
+- [docs/architecture/c4-context.md](docs/architecture/c4-context.md)
+- [docs/architecture/c4-container.md](docs/architecture/c4-container.md)
+- [docs/architecture/module-boundaries.md](docs/architecture/module-boundaries.md)
+- [docs/architecture/sequence-diagrams.md](docs/architecture/sequence-diagrams.md)
+- [docs/architecture/deployment-view.md](docs/architecture/deployment-view.md)
 - [docs/architecture/supervision-tree.md](docs/architecture/supervision-tree.md)
 - [docs/architecture/data-consistency.md](docs/architecture/data-consistency.md)
 - [docs/architecture/messaging.md](docs/architecture/messaging.md)
@@ -81,6 +91,23 @@ More detail:
 - `Job`: public-facing async task with payload, idempotency key, status, and execution metadata
 - `JobAttempt`: one execution attempt with timing and failure metadata
 - `JobEvent`: append-only audit event stream for lifecycle transitions
+
+Domain evidence:
+
+- [docs/domain/glossary.md](docs/domain/glossary.md)
+- [docs/domain/bounded-contexts.md](docs/domain/bounded-contexts.md)
+- [docs/domain/aggregates.md](docs/domain/aggregates.md)
+- [docs/domain/invariants.md](docs/domain/invariants.md)
+- [docs/domain/state-machines.md](docs/domain/state-machines.md)
+
+Product evidence:
+
+- [docs/product/problem.md](docs/product/problem.md)
+- [docs/product/personas.md](docs/product/personas.md)
+- [docs/product/use-cases.md](docs/product/use-cases.md)
+- [docs/product/non-goals.md](docs/product/non-goals.md)
+- [docs/product/roadmap.md](docs/product/roadmap.md)
+- [docs/product/pricing-or-plans.md](docs/product/pricing-or-plans.md)
 
 ## API documentation
 
@@ -151,6 +178,7 @@ Benchmark assets live in:
 - [benchmarks/results/local-baseline.md](benchmarks/results/local-baseline.md)
 - [docs/benchmarks/methodology.md](docs/benchmarks/methodology.md)
 - [docs/benchmarks/latest-results.md](docs/benchmarks/latest-results.md)
+- [docs/scalability.md](docs/scalability.md)
 
 The scripts cover smoke, load, stress, and spike scenarios using k6.
 
@@ -201,6 +229,9 @@ Supporting docs:
 - Webhook egress is deliberately policy-first: unsafe destinations are
   discarded instead of retried because SSRF violations are not transient
   delivery failures.
+- Operational cost is documented explicitly in
+  [docs/operational-cost.md](docs/operational-cost.md) so the repository does
+  not confuse a portfolio-ready architecture slice with a fully operated SaaS.
 
 See ADRs:
 

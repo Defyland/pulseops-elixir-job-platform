@@ -4,7 +4,11 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
   @moduledoc false
 
   @repo Path.expand("../..", __DIR__)
-  @external_spec Path.expand("../specs/general-project-spec.md", @repo)
+  @external_specs [
+    {"specs/general-project-spec.md", "# General Project Spec"},
+    {"specs/senior-engineering-rubric.md", "# Senior Engineering Rubric"},
+    {"specs/spec-driven-senior-quality.md", "# Spec-Driven Senior Quality Standard"}
+  ]
 
   @readme_sections [
     "What is this product?",
@@ -34,23 +38,34 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/benchmarks
     docs/api
     docs/diagrams
+    docs/domain
     docs/events
     docs/observability
+    docs/product
     docs/runbooks
     docs/security
+    docs/spec-driven
   )
 
   @documentation_files ~w(
     CHANGELOG.md
     README.md
     openapi.yaml
+    docs/engineering-case-study.md
     docs/evaluator-guide.md
+    docs/scalability.md
+    docs/operational-cost.md
     docs/api/examples.md
     docs/api/errors.md
     docs/api/authorization-matrix.md
     docs/adr/001-oban-as-persistent-execution-engine.md
     docs/adr/002-job-events-before-event-store.md
     docs/architecture/overview.md
+    docs/architecture/c4-context.md
+    docs/architecture/c4-container.md
+    docs/architecture/module-boundaries.md
+    docs/architecture/sequence-diagrams.md
+    docs/architecture/deployment-view.md
     docs/architecture/supervision-tree.md
     docs/architecture/data-consistency.md
     docs/architecture/messaging.md
@@ -61,10 +76,21 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/benchmarks/methodology.md
     docs/benchmarks/latest-results.md
     docs/diagrams/request-and-worker-flows.md
+    docs/domain/glossary.md
+    docs/domain/bounded-contexts.md
+    docs/domain/aggregates.md
+    docs/domain/invariants.md
+    docs/domain/state-machines.md
     docs/events/README.md
     docs/events/job_lifecycle_event.v1.json
     docs/observability/dashboard-preview.svg
     docs/observability/evidence.md
+    docs/product/problem.md
+    docs/product/personas.md
+    docs/product/use-cases.md
+    docs/product/non-goals.md
+    docs/product/roadmap.md
+    docs/product/pricing-or-plans.md
     docs/runbooks/timeout-and-dead-letter.md
     docs/runbooks/job-replay-contract-drift.md
     docs/runbooks/postgres-restore-drill.md
@@ -72,21 +98,37 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/runbooks/incident-response.md
     docs/runbooks/disaster-recovery.md
     docs/security/threat-model.md
+    docs/spec-driven/senior-readiness-spec.md
+    docs/spec-driven/implementation-plan.md
+    docs/spec-driven/verification-report.md
     ops/prometheus/alerts.yml
     ops/deploy/fly/fly.toml
     ops/deploy/fly/README.md
   )
 
-  test "general project spec is represented by executable compliance tests" do
+  test "shared senior specs are represented by executable compliance tests" do
     baseline = read!("docs/engineering-baseline.md")
+    senior_readiness = read!("docs/spec-driven/senior-readiness-spec.md")
+    implementation_plan = read!("docs/spec-driven/implementation-plan.md")
+    verification_report = read!("docs/spec-driven/verification-report.md")
 
     assert baseline =~ "specs/general-project-spec.md"
+    assert baseline =~ "specs/senior-engineering-rubric.md"
+    assert baseline =~ "specs/spec-driven-senior-quality.md"
     assert baseline =~ "Repository-controlled requirements closed"
+    assert senior_readiness =~ "specs/general-project-spec.md"
+    assert senior_readiness =~ "specs/senior-engineering-rubric.md"
+    assert senior_readiness =~ "specs/spec-driven-senior-quality.md"
+    assert implementation_plan =~ "Acceptance Criteria Mapping"
+    assert verification_report =~ "Commands Run"
 
-    if File.exists?(@external_spec) do
-      assert File.read!(@external_spec) =~ "# General Project Spec"
-      assert File.read!(@external_spec) =~ "Repository Definition of Done"
-    end
+    Enum.each(@external_specs, fn {relative_path, heading} ->
+      path = Path.expand("../#{relative_path}", @repo)
+
+      if File.exists?(path) do
+        assert File.read!(path) =~ heading
+      end
+    end)
   end
 
   test "mandatory documentation structure and entrypoints exist" do
@@ -118,6 +160,16 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "docs/architecture/production-readiness.md",
         "docs/architecture/production-gap-analysis.md",
         "docs/observability/evidence.md",
+        "docs/spec-driven/senior-readiness-spec.md",
+        "docs/spec-driven/implementation-plan.md",
+        "docs/spec-driven/verification-report.md",
+        "docs/engineering-case-study.md",
+        "docs/product/problem.md",
+        "docs/domain/glossary.md",
+        "docs/architecture/c4-context.md",
+        "docs/architecture/module-boundaries.md",
+        "docs/scalability.md",
+        "docs/operational-cost.md",
         "docs/events/README.md",
         "docs/security/threat-model.md",
         "docs/adr/002-job-events-before-event-store.md",
@@ -132,6 +184,10 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "Evidence Map",
         "Senior-Level Signals",
         "Known Non-Goals",
+        "Spec-driven readiness",
+        "Engineering case study",
+        "Product docs",
+        "Domain docs",
         "Event contracts and replay policy",
         "Threat model",
         "Event-store decision"
@@ -168,6 +224,146 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     assert_contains!(read!("config/dev.exs"), "System.get_env(\"POSTGRES_PORT\", \"5432\")")
     assert_contains!(dockerignore, "_build")
     assert_contains!(dockerignore, "deps")
+  end
+
+  test "spec-driven senior quality artifacts are complete and honest" do
+    senior_readiness = read!("docs/spec-driven/senior-readiness-spec.md")
+    implementation_plan = read!("docs/spec-driven/implementation-plan.md")
+    verification_report = read!("docs/spec-driven/verification-report.md")
+
+    Enum.each(
+      [
+        "Product Bar",
+        "Domain Bar",
+        "Architecture Bar",
+        "API Bar",
+        "Data and Consistency Bar",
+        "Security Bar",
+        "Observability Bar",
+        "Performance Bar",
+        "Scalability Bar",
+        "Operational Cost Bar",
+        "Maintainability Bar",
+        "Readability Bar",
+        "Test and CI Bar",
+        "Evidence Matrix",
+        "Out of Scope",
+        "Real customer production readiness is honest",
+        "Partial"
+      ],
+      &assert_contains!(senior_readiness, &1)
+    )
+
+    Enum.each(
+      [
+        "Scope",
+        "Files to Create or Update",
+        "Acceptance Criteria Mapping",
+        "Verification Commands",
+        "Risks",
+        "Deferred Work",
+        "Application behavior is not changed"
+      ],
+      &assert_contains!(implementation_plan, &1)
+    )
+
+    Enum.each(
+      [
+        "Summary",
+        "Commands Run",
+        "Passing Criteria",
+        "Partial Criteria",
+        "Failed or Blocked Criteria",
+        "Remaining Risk",
+        "Real customer production readiness remains partial"
+      ],
+      &assert_contains!(verification_report, &1)
+    )
+  end
+
+  test "product domain case study scalability and cost evidence meet senior rubric" do
+    case_study = read!("docs/engineering-case-study.md")
+    product_problem = read!("docs/product/problem.md")
+    personas = read!("docs/product/personas.md")
+    use_cases = read!("docs/product/use-cases.md")
+    non_goals = read!("docs/product/non-goals.md")
+    roadmap = read!("docs/product/roadmap.md")
+    plans = read!("docs/product/pricing-or-plans.md")
+    glossary = read!("docs/domain/glossary.md")
+    contexts = read!("docs/domain/bounded-contexts.md")
+    aggregates = read!("docs/domain/aggregates.md")
+    invariants = read!("docs/domain/invariants.md")
+    state_machines = read!("docs/domain/state-machines.md")
+    scalability = read!("docs/scalability.md")
+    cost = read!("docs/operational-cost.md")
+
+    Enum.each(
+      [
+        "Product Context",
+        "Domain Model",
+        "Architecture",
+        "Key Trade-offs",
+        "Data Model",
+        "Consistency Model",
+        "Failure Scenarios",
+        "Performance Strategy",
+        "Scalability Strategy",
+        "Security Model",
+        "Observability",
+        "Operational Cost",
+        "Maintainability",
+        "Product Decisions",
+        "What I Would Do Next"
+      ],
+      &assert_contains!(case_study, &1)
+    )
+
+    assert_contains!(product_problem, "tenant-facing platform capability")
+    assert_contains!(personas, "Platform Engineer")
+    assert_contains!(use_cases, "Triage a Dead-Lettered Job")
+    assert_contains!(non_goals, "Full Event Sourcing")
+    assert_contains!(roadmap, "Manual replay workflow")
+    assert_contains!(plans, "Architectural Impact")
+
+    Enum.each(
+      [
+        "Organization",
+        "API key",
+        "Queue",
+        "Job",
+        "Attempt",
+        "Job event",
+        "Idempotency key",
+        "Dead-lettered",
+        "Replay"
+      ],
+      &assert_contains!(glossary, &1)
+    )
+
+    assert_contains!(contexts, "PulseOps.Identity")
+    assert_contains!(contexts, "PulseOps.Queues")
+    assert_contains!(contexts, "PulseOps.Jobs")
+    assert_contains!(aggregates, "Organization Aggregate")
+    assert_contains!(aggregates, "Job Aggregate")
+    assert_contains!(invariants, "Tenant Isolation")
+    assert_contains!(invariants, "Webhook Safety")
+    assert_contains!(state_machines, "Job Lifecycle")
+    assert_contains!(state_machines, "Replay Lifecycle")
+
+    Enum.each(
+      ["Hot Path", "Fastest-Growing Tables", "Queue Buildup Modes", "Hot Partitions"],
+      &assert_contains!(scalability, &1)
+    )
+
+    Enum.each(
+      [
+        "Infrastructure Components",
+        "Debugging Complexity",
+        "Monitoring Burden",
+        "Simpler Alternatives Rejected"
+      ],
+      &assert_contains!(cost, &1)
+    )
   end
 
   test "documentation is portable and does not expose local filesystem paths" do

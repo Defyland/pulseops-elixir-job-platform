@@ -15,6 +15,9 @@
 - Release migration helper for production deploys.
 - Job lifecycle event contracts, replay/idempotency policy, event-store ADR,
   and threat model for admin operations, webhooks, and job execution.
+- Spec-driven senior-readiness evidence, product/domain docs, C4 architecture
+  views, engineering case study, scalability analysis, and operational cost
+  review.
 
 ### Fixed
 

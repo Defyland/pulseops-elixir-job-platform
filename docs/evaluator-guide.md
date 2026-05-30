@@ -20,6 +20,8 @@ surface first, then verify the engineering evidence.
 - Production thinking: retention pruning, PostgreSQL rate limiting, webhook
   egress policy, alert rules, deployment reference, runbooks, CI gates, SBOM,
   and operational trade-offs are documented.
+- Spec-driven evidence: senior acceptance criteria, implementation plan, and
+  verification report are checked into `docs/spec-driven/`.
 
 ## Five-Minute Review
 
@@ -41,7 +43,25 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 
 ## Evidence Map
 
+- Spec-driven readiness:
+  `docs/spec-driven/senior-readiness-spec.md`
+- Implementation plan:
+  `docs/spec-driven/implementation-plan.md`
+- Verification report:
+  `docs/spec-driven/verification-report.md`
+- Engineering case study: `docs/engineering-case-study.md`
+- Product docs: `docs/product/problem.md`, `docs/product/personas.md`,
+  `docs/product/use-cases.md`, `docs/product/non-goals.md`,
+  `docs/product/roadmap.md`, `docs/product/pricing-or-plans.md`
+- Domain docs: `docs/domain/glossary.md`,
+  `docs/domain/bounded-contexts.md`, `docs/domain/aggregates.md`,
+  `docs/domain/invariants.md`, `docs/domain/state-machines.md`
 - Architecture: `docs/architecture/overview.md`
+- C4 context/container: `docs/architecture/c4-context.md`,
+  `docs/architecture/c4-container.md`
+- Module boundaries: `docs/architecture/module-boundaries.md`
+- Sequence and deployment views: `docs/architecture/sequence-diagrams.md`,
+  `docs/architecture/deployment-view.md`
 - Data consistency: `docs/architecture/data-consistency.md`
 - Messaging: `docs/architecture/messaging.md`
 - Event contracts and replay policy: `docs/events/README.md`
@@ -58,6 +78,8 @@ PostgreSQL already bound to 5432. Override `POSTGRES_PORT` when needed.
 - Production readiness: `docs/architecture/production-readiness.md`
 - 100% production gap analysis:
   `docs/architecture/production-gap-analysis.md`
+- Scalability: `docs/scalability.md`
+- Operational cost: `docs/operational-cost.md`
 - Observability evidence: `docs/observability/evidence.md`
 - Benchmark results: `benchmarks/results/local-baseline.md`
 - Spec compliance tests: `test/spec_compliance/general_project_spec_test.exs`

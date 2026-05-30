@@ -1,6 +1,8 @@
 # PulseOps Engineering Baseline Audit
 
-This document tracks the repository against `specs/general-project-spec.md`.
+This document tracks the repository against `specs/general-project-spec.md`,
+`specs/senior-engineering-rubric.md`, and
+`specs/spec-driven-senior-quality.md`.
 It is intentionally operational: every line either points to existing evidence,
 or to work that must still be done before the repository can be considered
 fully complete.
@@ -11,6 +13,16 @@ fully complete.
 
 - Product-grade README exists in [README.md](../README.md).
 - Mandatory documentation folders exist under `docs/`.
+- Spec-driven acceptance, implementation, and verification evidence exists in
+  [senior-readiness-spec.md](spec-driven/senior-readiness-spec.md),
+  [implementation-plan.md](spec-driven/implementation-plan.md), and
+  [verification-report.md](spec-driven/verification-report.md).
+- The central senior case study exists in
+  [engineering-case-study.md](engineering-case-study.md).
+- Product and domain docs exist under [product](product/problem.md) and
+  [domain](domain/glossary.md).
+- C4 context, C4 container, module boundaries, sequence diagrams, and deployment
+  view exist under `docs/architecture/`.
 - Phoenix API, OpenAPI contract, database schema, async worker flow, and
   observability stack are implemented.
 - Security evidence is explicit through the threat model, authorization matrix,
@@ -40,6 +52,9 @@ fully complete.
   output, metrics, structured logs, and a dashboard preview.
 - The delta to a fully hosted production service is documented in
   [production-gap-analysis.md](architecture/production-gap-analysis.md).
+- Scalability and operational cost are documented in
+  [scalability.md](scalability.md) and
+  [operational-cost.md](operational-cost.md).
 - Dependabot is configured for Mix and GitHub Actions dependency maintenance.
 
 ## Execution plan
@@ -69,6 +84,9 @@ fully complete.
   query with the live metric name exposed by `/metrics`.
 - Added a 100% production readiness gap analysis and dependency maintenance
   automation for application dependencies and GitHub Actions.
+- Added spec-driven senior-readiness artifacts, product/domain evidence,
+  C4-style architecture docs, a central engineering case study, scalability
+  analysis, and operational cost analysis.
 
 ### External verification status
 
