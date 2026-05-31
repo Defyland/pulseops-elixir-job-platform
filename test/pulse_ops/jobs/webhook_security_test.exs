@@ -1,8 +1,8 @@
 defmodule PulseOps.Jobs.WebhookSecurityTest do
   use ExUnit.Case, async: false
 
-  alias PulseOps.Jobs.WebhookSecurity.ApprovedUrl
   alias PulseOps.Jobs.{WebhookCircuitBreaker, WebhookSecurity}
+  alias PulseOps.Jobs.WebhookSecurity.ApprovedUrl
 
   setup do
     previous = Application.get_env(:pulse_ops, :webhook_security)

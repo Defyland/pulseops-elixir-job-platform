@@ -3,8 +3,8 @@ defmodule PulseOps.Queues.ProvisionerTest do
 
   alias Ecto.Adapters.SQL.Sandbox
   alias PulseOps.Fixtures
-  alias PulseOps.Queues.Queue
   alias PulseOps.Queues.Provisioner
+  alias PulseOps.Queues.Queue
 
   setup do
     original_oban_config = Application.get_env(:pulse_ops, Oban, [])
