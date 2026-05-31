@@ -44,6 +44,17 @@ possible to production within a self-contained challenge.
 - A configured metrics bearer token makes `/metrics` return `401` unless the
   matching `Authorization: Bearer ...` header is supplied.
 
+### Scoped API Key Authorization
+
+- API keys carry explicit scopes and expose them in API key responses.
+- Bootstrap keys retain a wildcard `*` scope so existing tenant setup remains
+  operable without a migration ceremony.
+- Tenant endpoints require a least-privilege scope that matches their operation.
+- Valid API keys without the required scope receive `403 forbidden` instead of
+  relying on controller-level authorization by convention.
+- Tests prove both allowed and denied scope paths for API key, queue, job, and
+  organization endpoints.
+
 ### Supply-Chain Gate
 
 - Container vulnerability scanning is a blocking CI policy for HIGH and
