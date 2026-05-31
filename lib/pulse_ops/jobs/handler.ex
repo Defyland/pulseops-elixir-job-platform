@@ -57,7 +57,7 @@ defmodule PulseOps.Jobs.Handler do
              {"x-correlation-id", job.correlation_id},
              {"x-pulseops-job-id", job.id}
            ],
-           connect_options: ApprovedUrl.connect_options(approved_url),
+           connect_options: ApprovedUrl.connect_options(approved_url, job.timeout_ms),
            receive_timeout: job.timeout_ms,
            redirect: false,
            retry: false

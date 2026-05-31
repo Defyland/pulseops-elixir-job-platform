@@ -36,6 +36,7 @@ possible to production within a self-contained challenge.
   client connection options.
 - Automatic redirects are disabled; webhook redirects become terminal policy
   failures instead of being followed into an unvalidated destination.
+- Webhook connect and receive waits both use the job timeout budget.
 
 ### Metrics Boundary
 

@@ -67,7 +67,8 @@ while preserving a small operational surface for the platform team.
 - Webhook workers reject non-HTTPS destinations by default, block private
   network targets, support explicit host allowlists, resolve DNS before egress,
   pin the approved connection URI to a validated address, disable automatic
-  redirects, and use a per-host circuit breaker for repeated failures.
+  redirects, apply the job timeout budget to connection and receive waits, and
+  use a per-host circuit breaker for repeated failures.
 
 ### Audit logging
 

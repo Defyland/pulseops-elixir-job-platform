@@ -1,6 +1,7 @@
 defmodule PulseOps.Jobs.WebhookSecurityTest do
   use ExUnit.Case, async: false
 
+  alias PulseOps.Jobs.WebhookSecurity.ApprovedUrl
   alias PulseOps.Jobs.{WebhookCircuitBreaker, WebhookSecurity}
 
   setup do
@@ -57,6 +58,10 @@ defmodule PulseOps.Jobs.WebhookSecurityTest do
     assert approved_url.host == "hooks.example.com"
     assert URI.to_string(approved_url.connect_uri) == "https://93.184.216.34/jobs"
     assert approved_url.addresses == [{93, 184, 216, 34}]
+
+    connect_options = ApprovedUrl.connect_options(approved_url, 1_500)
+    assert connect_options[:hostname] == "hooks.example.com"
+    assert connect_options[:timeout] == 1_500
   end
 
   test "rejects hosts that resolve to configured private addresses" do
