@@ -145,6 +145,8 @@ paths:
                     $ref: '#/components/schemas/Organization'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
   /api/v1/api-keys:
@@ -166,6 +168,8 @@ paths:
                       $ref: '#/components/schemas/ApiKey'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
     post:
@@ -187,6 +191,12 @@ paths:
                     name:
                       type: string
                       example: ci-runner
+                    scopes:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/ApiKeyScope'
+                      default: ["*"]
+                      example: [jobs:read, jobs:write]
       responses:
         '201':
           description: API key created
@@ -204,6 +214,8 @@ paths:
                         type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         '422':
@@ -220,6 +232,8 @@ paths:
           description: Key revoked
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -243,6 +257,8 @@ paths:
                       $ref: '#/components/schemas/Queue'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
     post:
@@ -271,6 +287,8 @@ paths:
                     $ref: '#/components/schemas/Queue'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         '422':
@@ -304,6 +322,8 @@ paths:
                     $ref: '#/components/schemas/Queue'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -340,6 +360,8 @@ paths:
                       $ref: '#/components/schemas/Job'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
     post:
@@ -378,6 +400,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '429':
           $ref: '#/components/responses/RateLimited'
         '422':
@@ -401,6 +425,8 @@ paths:
                     $ref: '#/components/schemas/Job'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -424,6 +450,8 @@ paths:
                     $ref: '#/components/schemas/Job'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -449,6 +477,8 @@ paths:
                     $ref: '#/components/schemas/Job'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -476,6 +506,8 @@ paths:
                       $ref: '#/components/schemas/JobEvent'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
@@ -497,6 +529,12 @@ components:
   responses:
     Unauthorized:
       description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Forbidden:
+      description: API key is valid but lacks the required scope
       content:
         application/json:
           schema:
@@ -592,6 +630,10 @@ components:
           format: uuid
         name:
           type: string
+        scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiKeyScope'
         key_prefix:
           type: string
         revoked_at:
@@ -603,6 +645,18 @@ components:
         inserted_at:
           type: string
           format: date-time
+    ApiKeyScope:
+      type: string
+      enum:
+        - "*"
+        - organizations:read
+        - api_keys:read
+        - api_keys:write
+        - queues:read
+        - queues:write
+        - jobs:read
+        - jobs:write
+        - jobs:control
     QueueCreate:
       type: object
       required: [name, concurrency, max_attempts, execution_timeout_ms]

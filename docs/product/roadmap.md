@@ -3,6 +3,7 @@
 ## Now
 
 - Tenant registration and API key bootstrap.
+- Tenant-scoped API key permissions.
 - Tenant-scoped queues.
 - Idempotent job creation.
 - Job attempts and lifecycle events.
@@ -11,7 +12,6 @@
 
 ## Next
 
-- Tenant-scoped API key permissions.
 - Queue pause and resume endpoints with explicit operator audit events.
 - Manual replay workflow with dry-run validation, reason, operator identity,
   payload hash, and replay idempotency key.

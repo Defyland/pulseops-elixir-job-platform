@@ -288,6 +288,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "Idempotency Under Concurrency",
         "Webhook Egress Hardening",
         "Metrics Boundary",
+        "Scoped API Key Authorization",
         "Supply-Chain Gate",
         "API Validation"
       ],
@@ -637,8 +638,12 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     )
 
     assert authz =~ "Tenant isolation"
+    assert authz =~ "Required scope"
+    assert authz =~ "403"
     assert api_key_tests =~ "other tenants"
+    assert api_key_tests =~ "required_scope"
     assert job_tests =~ "validation errors"
+    assert job_tests =~ "jobs:control"
     assert job_tests =~ "json_response(conn, 422)"
   end
 

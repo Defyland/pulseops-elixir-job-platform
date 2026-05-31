@@ -63,7 +63,7 @@ These are launch blockers for a real production service:
 These are not launch blockers for a narrow pilot, but should be tracked before
 the service scales:
 
-- Tenant-scoped API key permissions and key rotation APIs.
+- Scheduled API key rotation APIs and expiration policy enforcement.
 - Payload encryption at rest for sensitive job payloads.
 - Admin/operator tooling for replay, queue pause/resume, and dead-letter
   triage beyond raw API calls.

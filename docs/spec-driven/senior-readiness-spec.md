@@ -208,7 +208,7 @@ Acceptance criteria:
 - Managed PostgreSQL procurement, PITR configuration, and recurring restore
   drills outside the checked-in runbooks.
 - Production secret manager provisioning and automatic key rotation.
-- OAuth/OIDC, SAML, or fine-grained API key scopes.
+- OAuth/OIDC, SAML, or operator RBAC beyond scoped API keys.
 - Payload encryption at rest.
 - Distributed webhook concurrency enforcement beyond the current node-local
   circuit breaker and policy controls.

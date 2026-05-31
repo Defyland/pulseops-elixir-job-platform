@@ -201,6 +201,8 @@ PulseOps exposes:
 ## Security considerations
 
 - API key authentication through `x-api-key`
+- scoped API key authorization for organization, API key, queue, and job
+  operations
 - tenant isolation enforced on every organization-scoped query
 - request rate limiting through ETS locally or PostgreSQL-backed buckets in
   multi-node production

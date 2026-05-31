@@ -17,7 +17,7 @@ egress, and job execution. It complements
 
 | Boundary | Risk |
 | --- | --- |
-| External API client to Phoenix | Untrusted caller can attempt cross-tenant access, flooding, malformed payloads, or replay abuse. |
+| External API client to Phoenix | Untrusted caller can attempt cross-tenant access, missing-scope access, flooding, malformed payloads, or replay abuse. |
 | Phoenix controllers to domain contexts | Authorization or validation bypass could mutate tenant state incorrectly. |
 | Domain contexts to PostgreSQL | Transaction gaps can split public job state from executor state. |
 | Oban worker to job handler | Payload-driven execution can fail, timeout, or trigger unsafe egress. |
@@ -32,6 +32,7 @@ queue resume, retention pruning, and incident repair.
 | Threat | Control |
 | --- | --- |
 | Operator retries another tenant's job | Every admin action must resolve tenant context and filter by `organization_id`. |
+| Automation key mutates resources outside its job | Require endpoint-specific API key scopes and return `403` for valid keys without the needed scope. |
 | Operator replays a destructive job without reason | Replay must require operator identity, reason, original job ID, and audit event. |
 | Admin endpoint becomes a bulk execution vector | Rate limit admin actions and require bounded batch size. |
 | Queue pause/resume disrupts unrelated tenants | Scope queue operations by tenant and queue ID/name. |
@@ -95,6 +96,7 @@ Residual risk:
 ## Abuse Cases To Test
 
 - Tenant A attempts to fetch, retry, or cancel Tenant B's job.
+- A read-only API key attempts to create jobs, mutate queues, or revoke keys.
 - Same idempotency key is submitted concurrently.
 - Dead-lettered job is retried with no Oban job ID.
 - Webhook points to `127.0.0.1`, `localhost`, RFC1918 IP, or IPv6 loopback.
@@ -114,7 +116,6 @@ Residual risk:
 
 ## Residual Risks
 
-- API keys are bearer credentials and do not yet have fine-grained scopes.
 - Payload encryption at rest is not implemented.
 - Replay endpoint is intentionally deferred.
 - Audit export for compliance review is not implemented.

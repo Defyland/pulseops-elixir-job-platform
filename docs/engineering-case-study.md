@@ -155,9 +155,9 @@ Details: [scalability](scalability.md).
 
 ## 10. Security Model
 
-PulseOps protects tenant data with API key authentication, tenant-scoped
-queries, rate limits, validation, structured errors, audit events, and webhook
-egress controls.
+PulseOps protects tenant data with scoped API key authentication,
+tenant-scoped queries, rate limits, validation, structured errors, audit events,
+and webhook egress controls.
 
 Security evidence:
 
@@ -165,11 +165,11 @@ Security evidence:
 - [threat model](security/threat-model.md)
 - [authorization matrix](api/authorization-matrix.md)
 - webhook security tests
-- request tests for API keys and tenant isolation
+- request tests for API keys, scope enforcement, and tenant isolation
 
-Residual risks are explicit: API keys lack fine-grained scopes, payload
-encryption at rest is not implemented, replay endpoint is deferred, and
-node-local webhook circuit state is not enough for very large deployments.
+Residual risks are explicit: payload encryption at rest is not implemented,
+replay endpoint is deferred, key rotation is manual, and node-local webhook
+circuit state is not enough for very large deployments.
 
 ## 11. Observability
 
@@ -227,6 +227,6 @@ Before real customer production:
 - provision managed PostgreSQL with backup, PITR, and restore drills
 - add production secret manager and rotation ownership
 - add alert routing and incident ownership
-- add API key scopes
+- add scheduled API key rotation and operator identity integration
 - add payload encryption at rest when payload sensitivity requires it
 - add release provenance and blocking image policy

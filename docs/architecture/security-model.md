@@ -39,6 +39,8 @@ while preserving a small operational surface for the platform team.
 - API tokens are generated as high-entropy random values with the format
   `po_live_<prefix>_<secret>`.
 - Only the prefix and SHA-256 digest are stored in PostgreSQL.
+- API keys carry explicit scopes. Bootstrap keys retain `*`; automation keys can
+  be limited to read, write, or control operations per resource.
 
 ### Tenant isolation and authorization
 
@@ -46,6 +48,8 @@ while preserving a small operational surface for the platform team.
 - Cross-tenant access returns `404`, not `403`, to avoid resource discovery.
 - Retry, cancel, queue mutation, and API key revocation all run through the same
   tenant boundary check.
+- Scoped authorization runs before controller actions. A valid key without the
+  endpoint's required scope returns `403 forbidden`.
 
 ### Rate limiting
 
@@ -89,7 +93,6 @@ while preserving a small operational surface for the platform team.
 
 ## Residual risk and follow-up
 
-- API keys are bearer credentials with no scoped permissions yet.
 - Payload encryption at rest is not implemented in this slice.
 - Key rotation is manual through create-and-revoke instead of scheduled rotation.
 - The webhook circuit breaker is node-local; a very large deployment should

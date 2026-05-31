@@ -18,6 +18,8 @@
 - Spec-driven senior-readiness evidence, product/domain docs, C4 architecture
   views, engineering case study, scalability analysis, and operational cost
   review.
+- Scoped API key authorization with least-privilege endpoint checks and OpenAPI
+  documentation.
 
 ### Fixed
 
@@ -70,6 +72,5 @@
 
 ### Known Follow-Ups
 
-- Tenant-scoped API key permissions.
 - Payload encryption at rest for sensitive job payloads.
 - Distributed webhook concurrency controls for high-volume deployments.

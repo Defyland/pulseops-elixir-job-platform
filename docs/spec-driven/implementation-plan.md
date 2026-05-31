@@ -1,10 +1,13 @@
 # Implementation Plan
 
-This plan applies the senior-readiness spec with the smallest complete change:
-add the missing evidence layer, wire it into evaluator entrypoints, and protect
-it with executable compliance tests. Application behavior is not changed in this
-pass because the current code already implements the documented job lifecycle,
-retry, dead-letter, webhook, retention, rate-limit, and observability behavior.
+This plan originally applied the senior-readiness spec with the smallest
+complete documentation change: add the missing evidence layer, wire it into
+evaluator entrypoints, and protect it with executable compliance tests.
+Application behavior is not changed in this original evidence pass because the
+code already implemented the documented job lifecycle, retry, dead-letter,
+webhook, retention, rate-limit, and observability behavior. Runtime hardening
+changes after that pass are tracked in
+[techlead-hardening-spec.md](techlead-hardening-spec.md).
 
 ## Scope
 
@@ -104,7 +107,6 @@ gh run watch --exit-status
 
 ## Deferred Work
 
-- Add fine-grained API key scopes and scope-specific authorization tests.
 - Add payload encryption at rest if job payloads can contain sensitive customer
   secrets.
 - Add production secret manager integration for a concrete platform.

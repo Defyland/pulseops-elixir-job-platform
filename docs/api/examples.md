@@ -42,6 +42,25 @@ Content-Type: application/json
 }
 ```
 
+## Create a scoped API key
+
+```http
+POST /api/v1/api-keys
+x-api-key: po_live_...
+Content-Type: application/json
+
+{
+  "api_key": {
+    "name": "job-enqueuer",
+    "scopes": ["jobs:write"]
+  }
+}
+```
+
+The bootstrap key starts with `["*"]`. Production automation should use smaller
+scope sets such as `["jobs:write"]`, `["jobs:read"]`, or
+`["queues:read", "queues:write"]`.
+
 ## Create a queue
 
 ```http

@@ -13,15 +13,16 @@ Techlead hardening verification date: 2026-05-31.
 The hardening pass closes the concrete review gaps found after the senior
 readiness evaluation: tenant-scoped Oban runtime queues, idempotency
 fingerprints with concurrent duplicate handling, webhook address pinning and
-redirect blocking, optional metrics bearer-token protection, explicit numeric
-input validation, and blocking container vulnerability scanning.
+redirect blocking, optional metrics bearer-token protection, scoped API key
+authorization, explicit numeric input validation, and blocking container
+vulnerability scanning.
 
 Latest remote `main` CI checked before this commit:
 
-- Run `26696681615`
-- Commit `bb95222`
+- Run `26709930290`
+- Commit `0bd981b`
 - Status: success
-- Duration: 4m52s
+- Duration: 4m54s
 
 The current commit still needs its own GitHub Actions run after push. Recording
 that run ID inside this same commit would require a follow-up commit and would
@@ -65,6 +66,18 @@ Additional commands run for the 2026-05-31 reference-quality pass:
 | `git diff --check` | Passed | No whitespace errors. |
 | `docker build -t pulseops-quality-check .` | Passed | Production release image builds locally after the quality pass. |
 | `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp aquasec/trivy:0.70.0 image --ignore-unfixed --severity CRITICAL,HIGH --format json --output /tmp/pulseops-quality-trivy-results.json --exit-code 1 pulseops-quality-check` | Passed | Blocking HIGH/CRITICAL scan completed with exit code 0. |
+
+Additional commands run for the 2026-05-31 scoped authorization pass:
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mix format` | Passed | Formatted Elixir code, tests, and migration. |
+| `mix test test/pulse_ops/identity_test.exs test/pulse_ops_web/controllers/api_key_controller_test.exs test/pulse_ops_web/controllers/queue_controller_test.exs test/pulse_ops_web/controllers/organization_controller_test.exs test/pulse_ops_web/controllers/job_controller_test.exs test/spec_compliance/general_project_spec_test.exs` | Passed | 43 tests, 0 failures. Covers scope validation, `403` authorization failures, wildcard bootstrap compatibility, and compliance evidence. |
+| `mix ci` | Passed | Credo found no issues, Sobelow found no vulnerabilities, dependency audit passed, 83 tests passed, total coverage 81.39%. |
+| `npx @redocly/cli lint openapi.yaml` | Passed | OpenAPI description validated successfully after adding scoped API key contracts and `403` responses. |
+| `git diff --check` | Passed | No whitespace errors. |
+| `docker build -t pulseops-scoped-auth-check .` | Passed | Production release image builds locally after scoped authorization changes. |
+| `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp aquasec/trivy:0.70.0 image --ignore-unfixed --severity CRITICAL,HIGH --format json --output /tmp/pulseops-scoped-auth-trivy-results.json --exit-code 1 pulseops-scoped-auth-check` | Passed | Blocking HIGH/CRITICAL scan completed with exit code 0. |
 
 ## Passing Criteria
 

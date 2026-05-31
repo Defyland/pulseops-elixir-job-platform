@@ -19,6 +19,7 @@ Every non-2xx response follows the same envelope:
 ## Error codes
 
 - `unauthorized`: missing or invalid `x-api-key`
+- `forbidden`: valid API key without the endpoint's required scope
 - `validation_error`: schema validation failed
 - `bad_request`: malformed scheduling or queue selection input
 - `conflict`: invalid lifecycle transition such as retrying a succeeded job
@@ -41,6 +42,23 @@ Every non-2xx response follows the same envelope:
 
 The API intentionally returns `404` for cross-tenant resource access so callers
 cannot distinguish between “unknown id” and “known id in another tenant”.
+
+Valid API keys that belong to the tenant but lack the endpoint's required scope
+return `403` with the missing scope in `details.required_scope`.
+
+```json
+{
+  "error": {
+    "code": "forbidden",
+    "message": "API key scope is not allowed for this endpoint",
+    "details": {
+      "required_scope": "jobs:write"
+    },
+    "request_id": "F5kPqF0A0E4FGQAAABhD",
+    "correlation_id": "corr-scope-check"
+  }
+}
+```
 
 ## Validation failure example
 
