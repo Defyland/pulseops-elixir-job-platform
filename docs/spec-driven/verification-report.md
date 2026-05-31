@@ -53,6 +53,19 @@ Additional commands run for the 2026-05-31 techlead hardening pass:
 | `docker build -t pulseops-hardening-check .` | Passed | Production release image builds locally. |
 | `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp aquasec/trivy:0.70.0 image --ignore-unfixed --severity CRITICAL,HIGH --format json --output /tmp/pulseops-trivy-results.json --exit-code 1 pulseops-hardening-check` | Passed | Blocking HIGH/CRITICAL scan completed with exit code 0. |
 
+Additional commands run for the 2026-05-31 reference-quality pass:
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mix test test/pulse_ops/jobs_test.exs` | Passed | 10 tests, 0 failures. Covers idempotency fingerprint extraction, legacy fingerprint backfill, and legacy conflict behavior. |
+| `mix test test/pulse_ops/queues/provisioner_test.exs test/spec_compliance/general_project_spec_test.exs` | Passed | 22 tests, 0 failures. Covers local queue resync evidence and documentation compliance. |
+| `mix test test/pulse_ops/jobs/webhook_security_test.exs test/pulse_ops/jobs/execution_worker_test.exs test/spec_compliance/general_project_spec_test.exs` | Passed | 32 tests, 0 failures. Covers approved URL connection options and webhook timeout budget evidence. |
+| `mix ci` | Passed | Credo found no issues, Sobelow found no vulnerabilities, dependency audit passed, 78 tests passed, total coverage 81.09%. |
+| `npx @redocly/cli lint openapi.yaml` | Passed | OpenAPI description validated successfully. |
+| `git diff --check` | Passed | No whitespace errors. |
+| `docker build -t pulseops-quality-check .` | Passed | Production release image builds locally after the quality pass. |
+| `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp aquasec/trivy:0.70.0 image --ignore-unfixed --severity CRITICAL,HIGH --format json --output /tmp/pulseops-quality-trivy-results.json --exit-code 1 pulseops-quality-check` | Passed | Blocking HIGH/CRITICAL scan completed with exit code 0. |
+
 ## Passing Criteria
 
 - Spec-driven docs exist and reference the shared standards.
