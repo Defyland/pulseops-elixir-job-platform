@@ -42,6 +42,10 @@ config :pulse_ops, :metrics_auth, %{
 }
 
 config :pulse_ops,
+       :queue_provisioning_resync_interval_ms,
+       String.to_integer(System.get_env("QUEUE_PROVISIONING_RESYNC_INTERVAL_MS", "60000"))
+
+config :pulse_ops,
        :job_retention_pruning_interval_ms,
        String.to_integer(System.get_env("JOB_RETENTION_PRUNING_INTERVAL_MS", "86400000"))
 

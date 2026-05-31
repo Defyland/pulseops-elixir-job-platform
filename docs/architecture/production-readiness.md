@@ -60,7 +60,9 @@ production launch, see
   deployments. Extremely high request volume should move this concern to Redis
   or an API gateway.
 - Queue concurrency is synchronized into Oban queues, but per-tenant fairness
-  beyond queue configuration is not yet adaptive.
+  beyond queue configuration is not yet adaptive. Each node periodically
+  reconciles domain queues into local Oban queue processes so multi-node
+  convergence does not depend on process restarts.
 - Webhook egress has allowlisting, private-network blocking, DNS validation,
   address pinning, redirect blocking, and a node-local circuit breaker.
   Per-host distributed concurrency limits are still a follow-up.

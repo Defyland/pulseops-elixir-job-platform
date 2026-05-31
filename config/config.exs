@@ -12,6 +12,7 @@ config :pulse_ops,
   generators: [timestamp_type: :utc_datetime, binary_id: true],
   api_rate_limit: %{limit: 240, window_ms: 60_000, storage: :ets},
   metrics_auth: %{bearer_token: nil},
+  queue_provisioning_resync_interval_ms: 60_000,
   job_retention_pruning_interval_ms: 86_400_000,
   webhook_security: %{
     allowed_hosts: [],

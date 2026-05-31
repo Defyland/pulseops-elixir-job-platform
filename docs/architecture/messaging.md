@@ -8,7 +8,9 @@ implementation below.
 
 - Exchange: not applicable; HTTP is the publisher surface and Oban is the
   durable executor.
-- Queues: tenant-defined `queues` rows are synchronized into Oban queue names.
+- Queues: tenant-defined `queues` rows are synchronized into tenant-scoped Oban
+  runtime queue names. Each app node resynchronizes periodically so local Oban
+  queue processes converge without putting provisioning on the enqueue hot path.
 - Routing keys: the API routes jobs by `queue_name` or `queue_id`.
 - Retry queues: Oban stores retryable jobs in `oban_jobs` with scheduled retry
   timing and per-job attempt limits.

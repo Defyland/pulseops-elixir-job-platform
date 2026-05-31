@@ -15,8 +15,13 @@
 - Runtime queue provisioning happens during organization bootstrap and queue
   create/update flows, not on every enqueue. This keeps queue metadata changes
   off the request hot path under load.
+- Each node also periodically resynchronizes domain queues from PostgreSQL into
+  local Oban queue processes. That keeps `local_only` queue operations safe
+  while allowing nodes to converge after a queue is created elsewhere.
 - Idempotency is checked before the transaction and enforced again by a unique
-  database constraint on `organization_id + idempotency_key`.
+  database constraint on `organization_id + idempotency_key`. Reused keys are
+  compared against a deterministic request fingerprint so payload drift becomes
+  an explicit conflict instead of an accidental dedupe.
 
 ### Retry and cancel
 

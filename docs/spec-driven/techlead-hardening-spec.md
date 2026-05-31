@@ -14,6 +14,9 @@ possible to production within a self-contained challenge.
 - Public queue names remain tenant-local API concepts.
 - Oban runtime queue names include the tenant boundary so two organizations can
   both have a `default` queue without sharing pause, scale, or drain behavior.
+- Each node periodically resynchronizes database-backed queues into local Oban
+  queue processes so queue creation on one node does not require restarts on
+  the others.
 - Tests prove that draining one tenant's default runtime queue does not execute
   another tenant's default queue.
 

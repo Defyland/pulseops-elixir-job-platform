@@ -18,7 +18,9 @@ graph TD
 ## Notes
 
 - `Oban` owns queue processes, schedulers, and the pruner plugin.
-- `PulseOps.Queues.Provisioner` only coordinates queue runtime shape; it does not execute jobs itself.
+- `PulseOps.Queues.Provisioner` only coordinates queue runtime shape; it does
+  not execute jobs itself. It performs startup and periodic local resyncs from
+  PostgreSQL so each app node converges on the expected Oban queue set.
 - `PulseOps.Jobs.Reconciler` repairs platform jobs that remain `running` after Oban has already reached a terminal state.
 - `PulseOps.Jobs.RetentionPruner` removes terminal job history after the tenant retention window.
 - `PulseOps.Jobs.WebhookCircuitBreaker` isolates repeated webhook destination failures from the rest of the worker system.

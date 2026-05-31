@@ -8,6 +8,8 @@ defmodule PulseOps.Queues.Provisioner do
   alias PulseOps.Queues
   alias PulseOps.Queues.Queue
 
+  @default_resync_interval_ms 60_000
+
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
@@ -22,22 +24,20 @@ defmodule PulseOps.Queues.Provisioner do
 
   @impl true
   def init(state) do
-    send(self(), :bootstrap)
-    {:ok, state}
+    send(self(), :sync_all)
+    {:ok, Map.merge(%{last_runtime_queues: [], last_sync_count: 0, last_synced_at: nil}, state)}
   end
 
   @impl true
-  def handle_info(:bootstrap, state) do
-    unless testing_manual?() do
-      try do
-        Queues.list_runtime_queues()
-        |> Enum.each(&ensure_queue/1)
-      rescue
-        error ->
-          Logger.warning("queue bootstrap skipped: #{Exception.message(error)}")
+  def handle_info(:sync_all, state) do
+    state =
+      if testing_manual?() do
+        state
+      else
+        sync_all_queues(state)
       end
-    end
 
+    schedule_sync_all()
     {:noreply, state}
   end
 
@@ -68,6 +68,34 @@ defmodule PulseOps.Queues.Provisioner do
     end
 
     :ok
+  end
+
+  defp sync_all_queues(state) do
+    queues = Queues.list_runtime_queues()
+    Enum.each(queues, &ensure_queue/1)
+
+    %{
+      state
+      | last_runtime_queues: Enum.map(queues, &Queue.runtime_name/1),
+        last_sync_count: length(queues),
+        last_synced_at: DateTime.utc_now()
+    }
+  rescue
+    error ->
+      Logger.warning("queue provisioning resync skipped: #{Exception.message(error)}")
+      state
+  end
+
+  defp schedule_sync_all do
+    Process.send_after(self(), :sync_all, resync_interval_ms())
+  end
+
+  defp resync_interval_ms do
+    Application.get_env(
+      :pulse_ops,
+      :queue_provisioning_resync_interval_ms,
+      @default_resync_interval_ms
+    )
   end
 
   defp maybe_scale_queue(name, concurrency) do
