@@ -5,7 +5,7 @@ defmodule PulseOps.Jobs do
 
   alias Oban.Job, as: ObanJob
   alias PulseOps.Identity.Organization
-  alias PulseOps.Jobs.{ExecutionWorker, Job, JobAttempt, JobEvent, StateMachine}
+  alias PulseOps.Jobs.{ExecutionWorker, Idempotency, Job, JobAttempt, JobEvent, StateMachine}
   alias PulseOps.Queues
   alias PulseOps.Queues.Queue
   alias PulseOps.Repo
@@ -227,8 +227,8 @@ defmodule PulseOps.Jobs do
          max_attempts: max_attempts,
          timeout_ms: timeout_ms,
          scheduled_at: scheduled_at
-       }}
-      |> put_idempotency_fingerprint()
+       }
+       |> then(&Map.put(&1, :idempotency_fingerprint, Idempotency.fingerprint(&1)))}
     end
   end
 
@@ -405,48 +405,6 @@ defmodule PulseOps.Jobs do
 
   defp attr(attrs, key), do: Map.get(attrs, Atom.to_string(key)) || Map.get(attrs, key)
 
-  defp put_idempotency_fingerprint({:ok, attrs}) do
-    {:ok, put_idempotency_fingerprint(attrs)}
-  end
-
-  defp put_idempotency_fingerprint(%{idempotency_key: key} = attrs) when key in [nil, ""] do
-    Map.put(attrs, :idempotency_fingerprint, nil)
-  end
-
-  defp put_idempotency_fingerprint(attrs) do
-    fingerprint_payload = %{
-      queue_id: attrs.queue_id,
-      external_ref: attrs.external_ref,
-      worker: attrs.worker,
-      priority: attrs.priority,
-      payload: attrs.payload,
-      max_attempts: attrs.max_attempts,
-      timeout_ms: attrs.timeout_ms,
-      scheduled_at: normalize_fingerprint_term(attrs.scheduled_at)
-    }
-
-    fingerprint =
-      :sha256
-      |> :crypto.hash(:erlang.term_to_binary(normalize_fingerprint_term(fingerprint_payload)))
-      |> Base.encode16(case: :lower)
-
-    Map.put(attrs, :idempotency_fingerprint, fingerprint)
-  end
-
-  defp normalize_fingerprint_term(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
-
-  defp normalize_fingerprint_term(%{} = map) do
-    map
-    |> Enum.map(fn {key, value} -> {to_string(key), normalize_fingerprint_term(value)} end)
-    |> Enum.sort_by(fn {key, _value} -> key end)
-  end
-
-  defp normalize_fingerprint_term(list) when is_list(list) do
-    Enum.map(list, &normalize_fingerprint_term/1)
-  end
-
-  defp normalize_fingerprint_term(value), do: value
-
   defp ensure_idempotency_available(_organization_id, %{idempotency_key: key})
        when key in [nil, ""] do
     :ok
@@ -460,12 +418,29 @@ defmodule PulseOps.Jobs do
   end
 
   defp compare_idempotency_fingerprint(%Job{} = job, attrs) do
-    if job.idempotency_fingerprint == attrs.idempotency_fingerprint do
-      {:deduplicated, job}
+    stored_fingerprint = job.idempotency_fingerprint || Idempotency.fingerprint(job)
+
+    if stored_fingerprint == attrs.idempotency_fingerprint do
+      {:deduplicated, maybe_backfill_idempotency_fingerprint(job, stored_fingerprint)}
     else
       {:error, {:conflict, "idempotency key already used with a different request"}}
     end
   end
+
+  defp maybe_backfill_idempotency_fingerprint(
+         %Job{idempotency_fingerprint: nil} = job,
+         fingerprint
+       )
+       when is_binary(fingerprint) do
+    from(existing_job in Job,
+      where: existing_job.id == ^job.id and is_nil(existing_job.idempotency_fingerprint)
+    )
+    |> Repo.update_all(set: [idempotency_fingerprint: fingerprint])
+
+    %{job | idempotency_fingerprint: fingerprint}
+  end
+
+  defp maybe_backfill_idempotency_fingerprint(%Job{} = job, _fingerprint), do: job
 
   defp handle_create_changeset_error(attrs, %Ecto.Changeset{} = changeset) do
     if idempotency_constraint_error?(changeset) do

@@ -41,6 +41,53 @@ defmodule PulseOps.JobsTest do
     assert message =~ "different request"
   end
 
+  test "create_job deduplicates legacy jobs without fingerprints and backfills them" do
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    attrs = %{
+      "queue_name" => "default",
+      "worker" => "noop",
+      "idempotency_key" => "legacy-fingerprint",
+      "payload" => %{"version" => 1}
+    }
+
+    assert {:ok, %{job: job, deduplicated?: false}} = Jobs.create_job(organization, attrs)
+
+    from(job in Job, where: job.id == ^job.id)
+    |> Repo.update_all(set: [idempotency_fingerprint: nil])
+
+    assert {:ok, %{job: deduplicated_job, deduplicated?: true}} =
+             Jobs.create_job(organization, attrs)
+
+    assert deduplicated_job.id == job.id
+
+    assert Repo.get!(Job, job.id).idempotency_fingerprint ==
+             deduplicated_job.idempotency_fingerprint
+
+    assert is_binary(deduplicated_job.idempotency_fingerprint)
+  end
+
+  test "create_job rejects legacy idempotency key reuse with a changed fingerprint" do
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    attrs = %{
+      "queue_name" => "default",
+      "worker" => "noop",
+      "idempotency_key" => "legacy-conflict",
+      "payload" => %{"version" => 1}
+    }
+
+    assert {:ok, %{job: job, deduplicated?: false}} = Jobs.create_job(organization, attrs)
+
+    from(job in Job, where: job.id == ^job.id)
+    |> Repo.update_all(set: [idempotency_fingerprint: nil])
+
+    assert {:error, {:conflict, message}} =
+             Jobs.create_job(organization, put_in(attrs, ["payload", "version"], 2))
+
+    assert message =~ "different request"
+  end
+
   test "create_job deduplicates concurrent requests after the database unique constraint wins" do
     %{organization: organization} = Fixtures.organization_fixture()
 
