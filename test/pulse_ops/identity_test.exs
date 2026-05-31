@@ -20,6 +20,7 @@ defmodule PulseOps.IdentityTest do
     assert {:ok, organization, api_key} = Identity.authenticate_api_key(result.bootstrap_api_key)
     assert organization.id == result.organization.id
     assert api_key.key_prefix
+    assert api_key.scopes == ["*"]
 
     assert [%{name: "default"}] = Queues.list_queues(organization)
   end
@@ -54,10 +55,35 @@ defmodule PulseOps.IdentityTest do
     %{organization: organization} = Fixtures.organization_fixture()
 
     assert {:ok, %{api_key: api_key, token: token}} =
-             Identity.issue_api_key(organization, %{"name" => "ci-runner"})
+             Identity.issue_api_key(organization, %{
+               "name" => "ci-runner",
+               "scopes" => ["jobs:read", "jobs:write"]
+             })
 
     assert api_key.name == "ci-runner"
-    assert {:ok, authed_org, _record} = Identity.authenticate_api_key(token)
+    assert api_key.scopes == ["jobs:read", "jobs:write"]
+    assert {:ok, authed_org, record} = Identity.authenticate_api_key(token)
     assert authed_org.id == organization.id
+    assert record.scopes == ["jobs:read", "jobs:write"]
+  end
+
+  test "issue_api_key rejects unsupported or ambiguous scopes" do
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    assert {:error, changeset} =
+             Identity.issue_api_key(organization, %{
+               "name" => "bad-scope",
+               "scopes" => ["jobs:read", "billing:admin"]
+             })
+
+    assert "contains unsupported scopes: billing:admin" in errors_on(changeset).scopes
+
+    assert {:error, changeset} =
+             Identity.issue_api_key(organization, %{
+               "name" => "mixed-wildcard",
+               "scopes" => ["*", "jobs:read"]
+             })
+
+    assert "cannot combine wildcard scope with other scopes" in errors_on(changeset).scopes
   end
 end

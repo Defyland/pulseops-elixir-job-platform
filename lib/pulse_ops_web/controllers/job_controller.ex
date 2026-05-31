@@ -6,6 +6,12 @@ defmodule PulseOpsWeb.JobController do
 
   action_fallback PulseOpsWeb.FallbackController
 
+  plug PulseOpsWeb.Plugs.ApiScopeAuth,
+       [scope: "jobs:read"] when action in [:index, :show, :events]
+
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "jobs:write"] when action in [:create]
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "jobs:control"] when action in [:retry, :cancel]
+
   def index(conn, params) do
     jobs = Jobs.list_jobs(conn.assigns.current_organization, params)
     json(conn, %{data: Enum.map(jobs, &Payloads.job/1)})

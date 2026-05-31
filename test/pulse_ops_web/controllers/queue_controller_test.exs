@@ -85,4 +85,62 @@ defmodule PulseOpsWeb.QueueControllerTest do
 
     assert %{"error" => %{"code" => "not_found"}} = json_response(conn, 404)
   end
+
+  test "enforces read and write scopes for queue endpoints", %{conn: conn} do
+    tenant = Fixtures.organization_fixture()
+    %{token: read_token} = Fixtures.api_key_fixture(tenant, %{"scopes" => ["queues:read"]})
+    %{token: write_token} = Fixtures.api_key_fixture(tenant, %{"scopes" => ["queues:write"]})
+
+    conn =
+      conn
+      |> Fixtures.authenticate(read_token)
+      |> get("/api/v1/queues")
+
+    assert %{"data" => [%{"name" => "default"}]} = json_response(conn, 200)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(read_token)
+      |> post("/api/v1/queues", %{
+        queue: %{
+          name: "blocked_queue",
+          concurrency: 3,
+          max_attempts: 4,
+          execution_timeout_ms: 5_000
+        }
+      })
+
+    assert %{
+             "error" => %{
+               "code" => "forbidden",
+               "details" => %{"required_scope" => "queues:write"}
+             }
+           } = json_response(conn, 403)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(write_token)
+      |> post("/api/v1/queues", %{
+        queue: %{
+          name: "allowed_queue",
+          concurrency: 3,
+          max_attempts: 4,
+          execution_timeout_ms: 5_000
+        }
+      })
+
+    assert %{"data" => %{"name" => "allowed_queue"}} = json_response(conn, 201)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(write_token)
+      |> get("/api/v1/queues")
+
+    assert %{
+             "error" => %{
+               "code" => "forbidden",
+               "details" => %{"required_scope" => "queues:read"}
+             }
+           } = json_response(conn, 403)
+  end
 end

@@ -41,6 +41,26 @@ defmodule PulseOps.Fixtures do
     queue
   end
 
+  def api_key_fixture(%{organization: organization}, attrs) do
+    api_key_fixture(organization, attrs)
+  end
+
+  def api_key_fixture(organization, attrs) do
+    unique = System.unique_integer([:positive])
+
+    params =
+      Map.merge(
+        %{
+          "name" => "api-key-#{unique}",
+          "scopes" => ["*"]
+        },
+        attrs
+      )
+
+    {:ok, result} = Identity.issue_api_key(organization, params)
+    result
+  end
+
   def job_fixture(organization, attrs \\ %{}) do
     unique = System.unique_integer([:positive])
 

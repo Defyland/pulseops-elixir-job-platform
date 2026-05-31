@@ -131,4 +131,75 @@ defmodule PulseOpsWeb.JobControllerTest do
     assert %{"data" => events} = json_response(conn, 200)
     assert Enum.any?(events, &(&1["event_type"] == "job.succeeded"))
   end
+
+  test "enforces read, write, and control scopes for job endpoints", %{conn: conn} do
+    tenant = Fixtures.organization_fixture()
+    job = Fixtures.job_fixture(tenant.organization)
+
+    %{token: read_token} = Fixtures.api_key_fixture(tenant, %{"scopes" => ["jobs:read"]})
+    %{token: write_token} = Fixtures.api_key_fixture(tenant, %{"scopes" => ["jobs:write"]})
+    %{token: control_token} = Fixtures.api_key_fixture(tenant, %{"scopes" => ["jobs:control"]})
+
+    conn =
+      conn
+      |> Fixtures.authenticate(read_token)
+      |> get("/api/v1/jobs/#{job.id}")
+
+    assert %{"data" => %{"id" => job_id}} = json_response(conn, 200)
+    assert job_id == job.id
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(read_token)
+      |> post("/api/v1/jobs", %{
+        job: %{queue_name: "default", worker: "noop", payload: %{"blocked" => true}}
+      })
+
+    assert %{
+             "error" => %{
+               "code" => "forbidden",
+               "details" => %{"required_scope" => "jobs:write"}
+             }
+           } = json_response(conn, 403)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(write_token)
+      |> post("/api/v1/jobs", %{
+        job: %{queue_name: "default", worker: "noop", payload: %{"allowed" => true}}
+      })
+
+    assert %{"data" => %{"worker" => "noop"}} = json_response(conn, 201)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(write_token)
+      |> get("/api/v1/jobs/#{job.id}")
+
+    assert %{
+             "error" => %{
+               "code" => "forbidden",
+               "details" => %{"required_scope" => "jobs:read"}
+             }
+           } = json_response(conn, 403)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(control_token)
+      |> post("/api/v1/jobs/#{job.id}/cancel")
+
+    assert %{"data" => %{"id" => ^job_id, "status" => "cancelled"}} = json_response(conn, 200)
+
+    conn =
+      build_conn()
+      |> Fixtures.authenticate(write_token)
+      |> post("/api/v1/jobs/#{job.id}/retry")
+
+    assert %{
+             "error" => %{
+               "code" => "forbidden",
+               "details" => %{"required_scope" => "jobs:control"}
+             }
+           } = json_response(conn, 403)
+  end
 end

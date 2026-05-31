@@ -37,4 +37,21 @@ defmodule PulseOpsWeb.OrganizationControllerTest do
     assert id == tenant.organization.id
     assert slug == tenant.organization.slug
   end
+
+  test "GET /api/v1/organizations/me requires the organization read scope", %{conn: conn} do
+    tenant = Fixtures.organization_fixture()
+    %{token: token} = Fixtures.api_key_fixture(tenant, %{"scopes" => ["jobs:read"]})
+
+    conn =
+      conn
+      |> Fixtures.authenticate(token)
+      |> get("/api/v1/organizations/me")
+
+    assert %{
+             "error" => %{
+               "code" => "forbidden",
+               "details" => %{"required_scope" => "organizations:read"}
+             }
+           } = json_response(conn, 403)
+  end
 end

@@ -6,6 +6,9 @@ defmodule PulseOpsWeb.QueueController do
 
   action_fallback PulseOpsWeb.FallbackController
 
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "queues:read"] when action in [:index]
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "queues:write"] when action in [:create, :update]
+
   def index(conn, _params) do
     queues = Queues.list_queues(conn.assigns.current_organization)
     json(conn, %{data: Enum.map(queues, &Payloads.queue/1)})

@@ -6,6 +6,9 @@ defmodule PulseOpsWeb.ApiKeyController do
 
   action_fallback PulseOpsWeb.FallbackController
 
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "api_keys:read"] when action in [:index]
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "api_keys:write"] when action in [:create, :delete]
+
   def index(conn, _params) do
     api_keys = Identity.list_api_keys(conn.assigns.current_organization)
     json(conn, %{data: Enum.map(api_keys, &Payloads.api_key/1)})

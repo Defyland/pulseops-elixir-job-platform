@@ -20,6 +20,7 @@ defmodule PulseOpsWeb.Payloads do
     %{
       id: api_key.id,
       name: api_key.name,
+      scopes: api_key.scopes,
       key_prefix: api_key.key_prefix,
       revoked_at: iso8601(api_key.revoked_at),
       last_used_at: iso8601(api_key.last_used_at),

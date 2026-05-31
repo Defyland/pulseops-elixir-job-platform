@@ -6,6 +6,8 @@ defmodule PulseOpsWeb.OrganizationController do
 
   action_fallback PulseOpsWeb.FallbackController
 
+  plug PulseOpsWeb.Plugs.ApiScopeAuth, [scope: "organizations:read"] when action in [:show]
+
   def create(conn, %{"organization" => organization_params}) do
     with {:ok, result} <- Identity.register_organization(organization_params) do
       conn
