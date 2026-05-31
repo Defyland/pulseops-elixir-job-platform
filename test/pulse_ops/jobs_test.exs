@@ -1,6 +1,8 @@
 defmodule PulseOps.JobsTest do
   use PulseOps.DataCase, async: false
 
+  use Oban.Testing, repo: PulseOps.Repo
+
   alias PulseOps.Fixtures
   alias PulseOps.Jobs
   alias PulseOps.Jobs.{Job, JobAttempt, JobEvent}
@@ -21,6 +23,66 @@ defmodule PulseOps.JobsTest do
     assert same_job.id == job.id
   end
 
+  test "create_job rejects idempotency key reuse with different request fingerprint" do
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    attrs = %{
+      "queue_name" => "default",
+      "worker" => "noop",
+      "idempotency_key" => "same-key-different-payload",
+      "payload" => %{"version" => 1}
+    }
+
+    assert {:ok, %{deduplicated?: false}} = Jobs.create_job(organization, attrs)
+
+    assert {:error, {:conflict, message}} =
+             Jobs.create_job(organization, put_in(attrs, ["payload", "version"], 2))
+
+    assert message =~ "different request"
+  end
+
+  test "create_job deduplicates concurrent requests after the database unique constraint wins" do
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    attrs = %{
+      "queue_name" => "default",
+      "worker" => "noop",
+      "idempotency_key" => "concurrent-idempotency",
+      "payload" => %{"kind" => "race"}
+    }
+
+    results =
+      1..8
+      |> Task.async_stream(fn _ -> Jobs.create_job(organization, attrs) end,
+        max_concurrency: 8,
+        timeout: 5_000
+      )
+      |> Enum.map(fn {:ok, result} -> result end)
+
+    assert Enum.all?(results, &match?({:ok, %{job: %Job{}}}, &1))
+
+    job_ids =
+      Enum.map(results, fn {:ok, %{job: job}} -> job.id end)
+      |> Enum.uniq()
+
+    assert [_single_job_id] = job_ids
+  end
+
+  test "tenant default queues use separate Oban runtime queues" do
+    first_tenant = Fixtures.organization_fixture()
+    second_tenant = Fixtures.organization_fixture()
+    first_job = Fixtures.job_fixture(first_tenant.organization)
+    second_job = Fixtures.job_fixture(second_tenant.organization)
+
+    refute Fixtures.runtime_queue(first_job) == Fixtures.runtime_queue(second_job)
+
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(first_job))
+    assert {:ok, %{status: "succeeded"}} = Jobs.get_job(first_tenant.organization, first_job.id)
+    assert {:ok, %{status: "queued"}} = Jobs.get_job(second_tenant.organization, second_job.id)
+
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(second_job))
+  end
+
   test "create_job rejects malformed schedule timestamps" do
     %{organization: organization} = Fixtures.organization_fixture()
 
@@ -29,6 +91,17 @@ defmodule PulseOps.JobsTest do
                "queue_name" => "default",
                "worker" => "noop",
                "scheduled_at" => "tomorrow please"
+             })
+  end
+
+  test "create_job rejects malformed integer inputs instead of silently defaulting" do
+    %{organization: organization} = Fixtures.organization_fixture()
+
+    assert {:error, {:bad_request, "priority must be an integer"}} =
+             Jobs.create_job(organization, %{
+               "queue_name" => "default",
+               "worker" => "noop",
+               "priority" => "urgent"
              })
   end
 

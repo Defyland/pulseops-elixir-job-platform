@@ -12,6 +12,7 @@ Evaluator entrypoints:
 - [docs/spec-driven/senior-readiness-spec.md](docs/spec-driven/senior-readiness-spec.md)
 - [docs/spec-driven/implementation-plan.md](docs/spec-driven/implementation-plan.md)
 - [docs/spec-driven/verification-report.md](docs/spec-driven/verification-report.md)
+- [docs/spec-driven/techlead-hardening-spec.md](docs/spec-driven/techlead-hardening-spec.md)
 - [docs/evaluator-guide.md](docs/evaluator-guide.md)
 - [docs/engineering-case-study.md](docs/engineering-case-study.md)
 - [docs/architecture/production-readiness.md](docs/architecture/production-readiness.md)
@@ -48,7 +49,7 @@ Teams usually start background processing with generic workers and little produc
 - PostgreSQL-backed distributed rate limiting for multi-node deployments
 - Tenant retention pruning for terminal job history
 - Webhook egress policy with allowlists, private-network blocking, DNS checks,
-  and circuit breaking
+  DNS pinning, redirect blocking, and circuit breaking
 
 ## Architecture overview
 
@@ -190,7 +191,7 @@ PulseOps exposes:
 - traces instrumented for Phoenix, Ecto, Bandit, and Oban
 - `/healthz`
 - `/readyz`
-- `/metrics`
+- `/metrics`, with optional bearer-token protection for production scrape paths
 - queue depth and job lifecycle metrics
 - Grafana dashboard definition at [ops/grafana/dashboards/pulseops-dashboard.json](ops/grafana/dashboards/pulseops-dashboard.json)
 - Captured demo metrics, structured log examples, and dashboard preview in
@@ -207,7 +208,7 @@ PulseOps exposes:
 - explicit validation for queue names, retry ceilings, time budgets, and job payload structure
 - correlation IDs propagated into webhook requests for auditability
 - webhook execution defaults to HTTPS, allowlists, private-network blocking,
-  DNS checks, and circuit breaking
+  DNS checks, DNS pinning, redirect blocking, and circuit breaking
 - Sobelow and dependency audit checks in CI
 
 Supporting docs:

@@ -101,6 +101,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     docs/spec-driven/senior-readiness-spec.md
     docs/spec-driven/implementation-plan.md
     docs/spec-driven/verification-report.md
+    docs/spec-driven/techlead-hardening-spec.md
     ops/prometheus/alerts.yml
     ops/deploy/fly/fly.toml
     ops/deploy/fly/README.md
@@ -230,6 +231,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
     senior_readiness = read!("docs/spec-driven/senior-readiness-spec.md")
     implementation_plan = read!("docs/spec-driven/implementation-plan.md")
     verification_report = read!("docs/spec-driven/verification-report.md")
+    hardening_spec = read!("docs/spec-driven/techlead-hardening-spec.md")
 
     Enum.each(
       [
@@ -278,6 +280,18 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "Real customer production readiness remains partial"
       ],
       &assert_contains!(verification_report, &1)
+    )
+
+    Enum.each(
+      [
+        "Tenant-Scoped Runtime Queues",
+        "Idempotency Under Concurrency",
+        "Webhook Egress Hardening",
+        "Metrics Boundary",
+        "Supply-Chain Gate",
+        "API Validation"
+      ],
+      &assert_contains!(hardening_spec, &1)
     )
   end
 
@@ -493,7 +507,7 @@ defmodule PulseOps.SpecCompliance.GeneralProjectSpecTest do
         "pulseops-sbom.spdx.json",
         "trivy-results.json",
         "pulseops-trivy",
-        "--exit-code 0"
+        "--exit-code 1"
       ],
       &assert_contains!(ci, &1)
     )

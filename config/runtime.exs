@@ -37,6 +37,10 @@ config :pulse_ops, :api_rate_limit, %{
   storage: rate_limit_storage
 }
 
+config :pulse_ops, :metrics_auth, %{
+  bearer_token: System.get_env("METRICS_BEARER_TOKEN")
+}
+
 config :pulse_ops,
        :job_retention_pruning_interval_ms,
        String.to_integer(System.get_env("JOB_RETENTION_PRUNING_INTERVAL_MS", "86400000"))

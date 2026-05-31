@@ -52,5 +52,12 @@ defmodule PulseOps.Queues.Queue do
     |> foreign_key_constraint(:organization_id)
   end
 
+  def runtime_name(%__MODULE__{id: id, organization_id: organization_id})
+      when is_binary(id) and is_binary(organization_id) do
+    "org_#{compact_id(organization_id)}_q_#{compact_id(id)}"
+  end
+
   def paused?(%__MODULE__{paused_at: paused_at}), do: not is_nil(paused_at)
+
+  defp compact_id(id), do: String.replace(id, "-", "")
 end

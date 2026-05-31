@@ -14,7 +14,7 @@ defmodule PulseOps.Jobs.RetentionPrunerTest do
     %{organization: organization} = Fixtures.organization_fixture(%{"retention_days" => 1})
     job = Fixtures.job_fixture(organization)
 
-    assert %{success: 1} = Oban.drain_queue(queue: "default")
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     expire_terminal_job(job, terminal_at)
 
     assert %{jobs: 1, attempts: 1, events: events_count} = Jobs.prune_expired_jobs(now)
@@ -48,7 +48,8 @@ defmodule PulseOps.Jobs.RetentionPrunerTest do
     short_job = Fixtures.job_fixture(short_retention)
     long_job = Fixtures.job_fixture(long_retention)
 
-    assert %{success: 2} = Oban.drain_queue(queue: "default")
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(short_job))
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(long_job))
     expire_terminal_job(short_job, terminal_at)
     expire_terminal_job(long_job, terminal_at)
 
@@ -63,7 +64,7 @@ defmodule PulseOps.Jobs.RetentionPrunerTest do
     %{organization: organization} = Fixtures.organization_fixture(%{"retention_days" => 1})
     job = Fixtures.job_fixture(organization)
 
-    assert %{success: 1} = Oban.drain_queue(queue: "default")
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     expire_terminal_job(job, terminal_at)
 
     pid = start_supervised!(RetentionPruner)

@@ -90,7 +90,7 @@ jobs:
             --severity CRITICAL,HIGH \
             --format json \
             --output /workspace/trivy-results.json \
-            --exit-code 0 \
+            --exit-code 1 \
             pulseops-ci:${{ github.sha }}
 
       - name: Upload vulnerability scan artifact

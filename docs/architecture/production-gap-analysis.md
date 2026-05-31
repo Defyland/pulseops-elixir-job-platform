@@ -29,13 +29,15 @@ production-operated service.
   reference under `ops/deploy/fly`.
 - Distributed rate limiting through PostgreSQL-backed buckets.
 - Webhook egress hardening with HTTPS enforcement, allowlists, DNS validation,
-  private-network blocking, and circuit breaking.
+  DNS pinning for validated addresses, private-network blocking, redirect
+  blocking, and circuit breaking.
+- Optional bearer-token protection for Prometheus scrape endpoints.
 - Retention pruning for terminal job history by tenant policy.
 - Prometheus alert rules for HTTP errors, queue depth, dead letters, and job
   duration.
 - CI for formatting, compile warnings, Credo, Sobelow, dependency audit, tests
   with coverage, OpenAPI linting, Docker build, SBOM generation, and container
-  vulnerability scan output.
+  vulnerability scan output with a blocking HIGH/CRITICAL policy.
 - Dependabot coverage for Mix dependencies and GitHub Actions.
 
 ## P0 Before Real Customer Traffic
@@ -50,9 +52,9 @@ These are launch blockers for a real production service:
   secrets with rotation procedures.
 - Alert routing. Prometheus rules exist, but a real PagerDuty/Opsgenie route,
   ownership schedule, and notification policy must be configured.
-- Container and supply-chain policy. CI generates SBOM and scan evidence, but
-  release provenance/attestation and an explicit blocking policy still need to
-  be defined for production releases.
+- Container and supply-chain policy/provenance. CI generates SBOM and blocks
+  HIGH/CRITICAL fixed vulnerabilities, but signed release provenance and
+  attestation still need to be defined for production releases.
 - Webhook egress scaling. Policy enforcement exists, but very large
   deployments should centralize circuit breaker and per-host concurrency limits.
 

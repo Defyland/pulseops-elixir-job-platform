@@ -68,8 +68,8 @@ Webhook jobs cross from PulseOps into untrusted third-party infrastructure.
 
 | Threat | Control |
 | --- | --- |
-| SSRF to localhost/private network | HTTPS default, private-network blocking, loopback blocking, and DNS validation. |
-| DNS rebinding | Resolve destination before egress and prefer an egress proxy for high-risk production deployments. |
+| SSRF to localhost/private network | HTTPS default, private-network blocking, loopback blocking, DNS validation, and disabled redirects. |
+| DNS rebinding | Resolve destination before egress, pin the approved connection URI to the validated address, and prefer an egress proxy for high-risk production deployments. |
 | Credential leakage through URL userinfo | Reject URLs containing userinfo. |
 | Retry storm against failing destination | Use bounded attempts, backoff, circuit breaker, and dead-letter state. |
 | Tenant config sends data to wrong host | Use `WEBHOOK_ALLOWED_HOSTS` and tenant/operator review before production enablement. |

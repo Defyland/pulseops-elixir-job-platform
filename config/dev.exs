@@ -57,7 +57,7 @@ config :pulse_ops, dev_routes: true
 # part of the operational contract for this challenge.
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id, :correlation_id, :organization_id, :job_id, :queue]
+  metadata: [:request_id, :correlation_id, :organization_id, :job_id, :queue, :runtime_queue]
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.

@@ -11,7 +11,7 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
     %{organization: organization} = Fixtures.organization_fixture()
     job = Fixtures.job_fixture(organization)
 
-    assert %{success: 1, failure: 0} = Oban.drain_queue(queue: "default")
+    assert %{success: 1, failure: 0} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     assert {:ok, job} = Jobs.get_job(organization, job.id)
 
     assert job.status == "succeeded"
@@ -29,7 +29,7 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
         "max_attempts" => 3
       })
 
-    assert %{success: 0, failure: 1} = Oban.drain_queue(queue: "default")
+    assert %{success: 0, failure: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     assert {:ok, job} = Jobs.get_job(organization, job.id)
 
     assert job.status == "retryable"
@@ -47,7 +47,9 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
         "payload" => %{}
       })
 
-    assert %{success: 0, failure: 0, discard: 1} = Oban.drain_queue(queue: "default")
+    assert %{success: 0, failure: 0, discard: 1} =
+             Oban.drain_queue(queue: Fixtures.runtime_queue(job))
+
     assert {:ok, job} = Jobs.get_job(organization, job.id)
     assert job.status == "dead_lettered"
   end
@@ -72,7 +74,7 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
         }
       })
 
-    assert %{success: 1} = Oban.drain_queue(queue: "default")
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     assert_receive {:webhook_headers, ["corr-webhook-123"]}
 
     assert {:ok, job} = Jobs.get_job(organization, job.id)
@@ -106,10 +108,50 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
         }
       })
 
-    assert %{discard: 1} = Oban.drain_queue(queue: "default")
+    assert %{discard: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     assert {:ok, job} = Jobs.get_job(organization, job.id)
     assert job.status == "dead_lettered"
     assert job.last_error =~ "private network"
+  end
+
+  test "dead-letters webhook redirects instead of following them" do
+    previous = Application.get_env(:pulse_ops, :webhook_security)
+
+    Application.put_env(:pulse_ops, :webhook_security, %{
+      allowed_hosts: [],
+      allow_http: true,
+      allow_private_networks: true,
+      resolve_dns: false,
+      circuit_breaker: %{failure_threshold: 2, reset_after_ms: 250}
+    })
+
+    on_exit(fn ->
+      Application.put_env(:pulse_ops, :webhook_security, previous)
+      WebhookCircuitBreaker.reset!()
+    end)
+
+    %{organization: organization} = Fixtures.organization_fixture()
+    bypass = Bypass.open()
+
+    Bypass.expect_once(bypass, "POST", "/hooks/jobs", fn conn ->
+      conn
+      |> Plug.Conn.put_resp_header("location", "http://127.0.0.1/admin")
+      |> Plug.Conn.resp(302, "")
+    end)
+
+    job =
+      Fixtures.job_fixture(organization, %{
+        "worker" => "webhook",
+        "payload" => %{
+          "url" => "http://localhost:#{bypass.port}/hooks/jobs",
+          "body" => %{"job" => "payload"}
+        }
+      })
+
+    assert %{discard: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
+    assert {:ok, job} = Jobs.get_job(organization, job.id)
+    assert job.status == "dead_lettered"
+    assert job.last_error =~ "redirects are disabled"
   end
 
   test "captures timeouts as retryable failures" do
@@ -122,7 +164,7 @@ defmodule PulseOps.Jobs.ExecutionWorkerTest do
         "payload" => %{"duration_ms" => 250}
       })
 
-    assert %{failure: 1} = Oban.drain_queue(queue: "default")
+    assert %{failure: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
     assert {:ok, job} = Jobs.get_job(organization, job.id)
     assert job.status == "retryable"
     assert job.last_error =~ "timeout budget"

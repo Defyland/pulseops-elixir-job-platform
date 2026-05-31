@@ -7,6 +7,7 @@ defmodule PulseOps.Jobs do
   alias PulseOps.Identity.Organization
   alias PulseOps.Jobs.{ExecutionWorker, Job, JobAttempt, JobEvent, StateMachine}
   alias PulseOps.Queues
+  alias PulseOps.Queues.Queue
   alias PulseOps.Repo
 
   @terminal_oban_states ~w(completed cancelled discarded)
@@ -55,15 +56,7 @@ defmodule PulseOps.Jobs do
   end
 
   def create_job(%Organization{} = organization, attrs) do
-    idempotency_key = Map.get(attrs, "idempotency_key") || Map.get(attrs, :idempotency_key)
-
-    case find_deduplicated_job(organization.id, idempotency_key) do
-      %Job{} = deduplicated_job ->
-        {:ok, %{job: Repo.preload(deduplicated_job, :queue), deduplicated?: true}}
-
-      nil ->
-        do_create_job(organization, attrs)
-    end
+    do_create_job(organization, attrs)
   end
 
   def retry_job(%Organization{id: organization_id}, job_id) do
@@ -205,7 +198,7 @@ defmodule PulseOps.Jobs do
 
     args
     |> ExecutionWorker.new(
-      queue: queue.name,
+      queue: Queue.runtime_name(queue),
       max_attempts: job.max_attempts,
       priority: job.priority,
       scheduled_at: job.scheduled_at
@@ -214,7 +207,12 @@ defmodule PulseOps.Jobs do
   end
 
   defp normalize_create_attrs(%Organization{} = organization, queue, attrs) do
-    with {:ok, scheduled_at} <- parse_datetime(attr(attrs, :scheduled_at)) do
+    with {:ok, scheduled_at} <- parse_datetime(attr(attrs, :scheduled_at)),
+         {:ok, priority} <- parse_integer(attr(attrs, :priority), 0, "priority"),
+         {:ok, max_attempts} <-
+           parse_integer(attr(attrs, :max_attempts), queue.max_attempts, "max_attempts"),
+         {:ok, timeout_ms} <-
+           parse_integer(attr(attrs, :timeout_ms), queue.execution_timeout_ms, "timeout_ms") do
       {:ok,
        %{
          organization_id: organization.id,
@@ -222,14 +220,15 @@ defmodule PulseOps.Jobs do
          external_ref: attr(attrs, :external_ref),
          worker: attr(attrs, :worker),
          status: "queued",
-         priority: coerce_integer(attr(attrs, :priority), 0),
+         priority: priority,
          payload: attr(attrs, :payload) || %{},
          idempotency_key: attr(attrs, :idempotency_key),
          correlation_id: attr(attrs, :correlation_id) || Ecto.UUID.generate(),
-         max_attempts: coerce_integer(attr(attrs, :max_attempts), queue.max_attempts),
-         timeout_ms: coerce_integer(attr(attrs, :timeout_ms), queue.execution_timeout_ms),
+         max_attempts: max_attempts,
+         timeout_ms: timeout_ms,
          scheduled_at: scheduled_at
        }}
+      |> put_idempotency_fingerprint()
     end
   end
 
@@ -247,8 +246,28 @@ defmodule PulseOps.Jobs do
   end
 
   defp create_job_for_queue(queue, organization, attrs) do
-    with {:ok, normalized_attrs} <- normalize_create_attrs(organization, queue, attrs) do
-      Repo.transaction(fn -> persist_created_job(queue, normalized_attrs) end)
+    with {:ok, normalized_attrs} <- normalize_create_attrs(organization, queue, attrs),
+         :ok <- ensure_idempotency_available(organization.id, normalized_attrs) do
+      persist_created_job_transaction(queue, normalized_attrs)
+    else
+      {:deduplicated, %Job{} = job} ->
+        {:ok, %{job: Repo.preload(job, :queue), deduplicated?: true}}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp persist_created_job_transaction(queue, normalized_attrs) do
+    case Repo.transaction(fn -> persist_created_job(queue, normalized_attrs) end) do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        handle_create_changeset_error(normalized_attrs, changeset)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -371,17 +390,111 @@ defmodule PulseOps.Jobs do
   defp parse_datetime(%DateTime{} = datetime), do: {:ok, datetime}
   defp parse_datetime(_), do: {:error, {:bad_request, "scheduled_at must be an ISO8601 datetime"}}
 
-  defp coerce_integer(nil, default), do: default
-  defp coerce_integer(value, _default) when is_integer(value), do: value
+  defp parse_integer(nil, default, _field), do: {:ok, default}
+  defp parse_integer(value, _default, _field) when is_integer(value), do: {:ok, value}
 
-  defp coerce_integer(value, default) when is_binary(value) do
+  defp parse_integer(value, _default, field) when is_binary(value) do
     case Integer.parse(value) do
-      {parsed, ""} -> parsed
-      _ -> default
+      {parsed, ""} -> {:ok, parsed}
+      _ -> {:error, {:bad_request, "#{field} must be an integer"}}
     end
   end
 
+  defp parse_integer(_value, _default, field),
+    do: {:error, {:bad_request, "#{field} must be an integer"}}
+
   defp attr(attrs, key), do: Map.get(attrs, Atom.to_string(key)) || Map.get(attrs, key)
+
+  defp put_idempotency_fingerprint({:ok, attrs}) do
+    {:ok, put_idempotency_fingerprint(attrs)}
+  end
+
+  defp put_idempotency_fingerprint(%{idempotency_key: key} = attrs) when key in [nil, ""] do
+    Map.put(attrs, :idempotency_fingerprint, nil)
+  end
+
+  defp put_idempotency_fingerprint(attrs) do
+    fingerprint_payload = %{
+      queue_id: attrs.queue_id,
+      external_ref: attrs.external_ref,
+      worker: attrs.worker,
+      priority: attrs.priority,
+      payload: attrs.payload,
+      max_attempts: attrs.max_attempts,
+      timeout_ms: attrs.timeout_ms,
+      scheduled_at: normalize_fingerprint_term(attrs.scheduled_at)
+    }
+
+    fingerprint =
+      :sha256
+      |> :crypto.hash(:erlang.term_to_binary(normalize_fingerprint_term(fingerprint_payload)))
+      |> Base.encode16(case: :lower)
+
+    Map.put(attrs, :idempotency_fingerprint, fingerprint)
+  end
+
+  defp normalize_fingerprint_term(%DateTime{} = datetime), do: DateTime.to_iso8601(datetime)
+
+  defp normalize_fingerprint_term(%{} = map) do
+    map
+    |> Enum.map(fn {key, value} -> {to_string(key), normalize_fingerprint_term(value)} end)
+    |> Enum.sort_by(fn {key, _value} -> key end)
+  end
+
+  defp normalize_fingerprint_term(list) when is_list(list) do
+    Enum.map(list, &normalize_fingerprint_term/1)
+  end
+
+  defp normalize_fingerprint_term(value), do: value
+
+  defp ensure_idempotency_available(_organization_id, %{idempotency_key: key})
+       when key in [nil, ""] do
+    :ok
+  end
+
+  defp ensure_idempotency_available(organization_id, attrs) do
+    case find_by_idempotency(organization_id, attrs.idempotency_key) do
+      nil -> :ok
+      %Job{} = job -> compare_idempotency_fingerprint(job, attrs)
+    end
+  end
+
+  defp compare_idempotency_fingerprint(%Job{} = job, attrs) do
+    if job.idempotency_fingerprint == attrs.idempotency_fingerprint do
+      {:deduplicated, job}
+    else
+      {:error, {:conflict, "idempotency key already used with a different request"}}
+    end
+  end
+
+  defp handle_create_changeset_error(attrs, %Ecto.Changeset{} = changeset) do
+    if idempotency_constraint_error?(changeset) do
+      resolve_idempotency_race(attrs, changeset)
+    else
+      {:error, changeset}
+    end
+  end
+
+  defp resolve_idempotency_race(attrs, changeset) do
+    case find_by_idempotency(attrs.organization_id, attrs.idempotency_key) do
+      %Job{} = job -> idempotency_race_result(job, attrs)
+      nil -> {:error, changeset}
+    end
+  end
+
+  defp idempotency_race_result(%Job{} = job, attrs) do
+    case compare_idempotency_fingerprint(job, attrs) do
+      {:deduplicated, deduplicated_job} ->
+        {:ok, %{job: Repo.preload(deduplicated_job, :queue), deduplicated?: true}}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp idempotency_constraint_error?(%Ecto.Changeset{} = changeset) do
+    Enum.any?(changeset.errors, fn {field, _error} -> field == :idempotency_key end)
+  end
 
   defp maybe_filter_by_status(query, %{"status" => status}) when is_binary(status) do
     where(query, [job], job.status == ^status)
@@ -573,10 +686,4 @@ defmodule PulseOps.Jobs do
   defp find_by_idempotency(organization_id, idempotency_key) do
     Repo.get_by(Job, organization_id: organization_id, idempotency_key: idempotency_key)
   end
-
-  defp find_deduplicated_job(_organization_id, nil), do: nil
-  defp find_deduplicated_job(_organization_id, ""), do: nil
-
-  defp find_deduplicated_job(organization_id, idempotency_key),
-    do: find_by_idempotency(organization_id, idempotency_key)
 end

@@ -48,7 +48,7 @@ defmodule PulseOps.Queues.Provisioner do
   end
 
   defp ensure_queue(%Queue{} = queue) do
-    name = queue.name
+    name = Queue.runtime_name(queue)
     paused? = Queue.paused?(queue)
 
     _ =

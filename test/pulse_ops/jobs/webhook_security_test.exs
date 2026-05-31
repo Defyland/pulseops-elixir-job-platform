@@ -44,6 +44,34 @@ defmodule PulseOps.Jobs.WebhookSecurityTest do
     assert reason =~ "not allowlisted"
   end
 
+  test "approves webhooks with pinned connect uri after deterministic DNS validation" do
+    put_webhook_config(%{
+      allowed_hosts: ["hooks.example.com"],
+      resolve_dns: true,
+      resolved_hosts: %{"hooks.example.com" => ["93.184.216.34"]}
+    })
+
+    assert {:ok, approved_url} =
+             WebhookSecurity.approve_url("https://hooks.example.com/jobs")
+
+    assert approved_url.host == "hooks.example.com"
+    assert URI.to_string(approved_url.connect_uri) == "https://93.184.216.34/jobs"
+    assert approved_url.addresses == [{93, 184, 216, 34}]
+  end
+
+  test "rejects hosts that resolve to configured private addresses" do
+    put_webhook_config(%{
+      allowed_hosts: ["hooks.example.com"],
+      resolve_dns: true,
+      resolved_hosts: %{"hooks.example.com" => ["10.0.0.10"]}
+    })
+
+    assert {:error, {:policy, reason}} =
+             WebhookSecurity.approve_url("https://hooks.example.com/jobs")
+
+    assert reason =~ "private network"
+  end
+
   test "opens webhook circuit after the configured failure threshold" do
     put_webhook_config(%{
       circuit_breaker: %{failure_threshold: 2, reset_after_ms: 100}

@@ -4,6 +4,7 @@ defmodule PulseOps.Fixtures do
   import Plug.Conn
 
   alias PulseOps.{Identity, Jobs, Queues}
+  alias PulseOps.Queues.Queue
 
   def organization_fixture(attrs \\ %{}) do
     unique = System.unique_integer([:positive])
@@ -57,6 +58,9 @@ defmodule PulseOps.Fixtures do
     {:ok, %{job: job}} = Jobs.create_job(organization, params)
     job
   end
+
+  def runtime_queue(%{queue: %Queue{} = queue}), do: Queue.runtime_name(queue)
+  def runtime_queue(%Queue{} = queue), do: Queue.runtime_name(queue)
 
   def authenticate(conn, token) do
     put_req_header(conn, "x-api-key", token)

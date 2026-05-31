@@ -7,6 +7,7 @@ defmodule PulseOps.Jobs.ExecutionWorker do
 
   alias PulseOps.Jobs
   alias PulseOps.Jobs.Handler
+  alias PulseOps.Queues.Queue
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"job_id" => platform_job_id}} = oban_job) do
@@ -19,7 +20,8 @@ defmodule PulseOps.Jobs.ExecutionWorker do
           correlation_id: job.correlation_id,
           organization_id: job.organization_id,
           job_id: job.id,
-          queue: job.queue.name
+          queue: job.queue.name,
+          runtime_queue: Queue.runtime_name(job.queue)
         )
 
         case job.status do

@@ -36,7 +36,7 @@ production launch, see
   metadata.
 - Phoenix, Ecto, Bandit, and Oban are wired for OpenTelemetry.
 - Prometheus metrics expose request, query, job lifecycle, queue depth, and VM
-  memory signals.
+  memory signals. Production scrape paths can require a bearer token.
 - Grafana dashboard JSON is checked in under `ops/grafana`.
 - Prometheus alert rules are checked in under `ops/prometheus/alerts.yml`.
 - Runbooks document timeout, dead-letter, restore drills, secret rotation,
@@ -62,8 +62,8 @@ production launch, see
 - Queue concurrency is synchronized into Oban queues, but per-tenant fairness
   beyond queue configuration is not yet adaptive.
 - Webhook egress has allowlisting, private-network blocking, DNS validation,
-  and a node-local circuit breaker. Per-host distributed concurrency limits are
-  still a follow-up.
+  address pinning, redirect blocking, and a node-local circuit breaker.
+  Per-host distributed concurrency limits are still a follow-up.
 - Payload encryption at rest is not implemented.
 - DR is documented, but multi-region restore automation is not implemented.
 

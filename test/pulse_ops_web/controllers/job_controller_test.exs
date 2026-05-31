@@ -53,7 +53,7 @@ defmodule PulseOpsWeb.JobControllerTest do
     first_job = Fixtures.job_fixture(tenant.organization, %{"worker" => "noop"})
     second_job = Fixtures.job_fixture(tenant.organization, %{"worker" => "noop"})
 
-    assert %{success: 2} = Oban.drain_queue(queue: "default")
+    assert %{success: 2} = Oban.drain_queue(queue: Fixtures.runtime_queue(first_job))
 
     conn =
       conn
@@ -91,7 +91,7 @@ defmodule PulseOpsWeb.JobControllerTest do
         "payload" => %{}
       })
 
-    assert %{discard: 1} = Oban.drain_queue(queue: "default")
+    assert %{discard: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(dead_lettered_job))
 
     conn =
       build_conn()
@@ -121,7 +121,7 @@ defmodule PulseOpsWeb.JobControllerTest do
     tenant = Fixtures.organization_fixture()
     job = Fixtures.job_fixture(tenant.organization)
 
-    assert %{success: 1} = Oban.drain_queue(queue: "default")
+    assert %{success: 1} = Oban.drain_queue(queue: Fixtures.runtime_queue(job))
 
     conn =
       conn

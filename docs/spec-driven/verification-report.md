@@ -8,6 +8,14 @@ not change application runtime behavior.
 
 Local verification date: 2026-05-30.
 
+Techlead hardening verification date: 2026-05-31.
+
+The hardening pass closes the concrete review gaps found after the senior
+readiness evaluation: tenant-scoped Oban runtime queues, idempotency
+fingerprints with concurrent duplicate handling, webhook address pinning and
+redirect blocking, optional metrics bearer-token protection, explicit numeric
+input validation, and blocking container vulnerability scanning.
+
 Latest remote `main` CI checked before this commit:
 
 - Run `26696681615`
@@ -31,6 +39,19 @@ Commands run from the project root:
 | `git diff --check` | Passed | No whitespace errors. |
 | `npx @redocly/cli lint openapi.yaml` | Passed | OpenAPI description validated successfully. |
 | `gh run list --workflow ci.yml --branch main --limit 3` | Passed | Latest remote `main` CI was green before this commit. |
+
+Additional commands run for the 2026-05-31 techlead hardening pass:
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `mix test test/pulse_ops/jobs_test.exs test/pulse_ops/jobs/execution_worker_test.exs test/pulse_ops/jobs/webhook_security_test.exs` | Passed | 20 tests, 0 failures. Covers tenant-scoped queue execution, idempotency fingerprint conflicts, concurrent idempotency, webhook pinning, and redirect blocking. |
+| `mix test test/pulse_ops_web/controllers/health_controller_test.exs test/spec_compliance/general_project_spec_test.exs` | Passed | 24 tests, 0 failures. Covers metrics bearer-token protection and hardening spec evidence. |
+| `mix test` | Passed | 75 tests, 0 failures. |
+| `mix ci` | Passed | Credo found no issues, Sobelow found no vulnerabilities, dependency audit passed, 75 tests passed, total coverage 81.75%. |
+| `npx @redocly/cli lint openapi.yaml` | Passed | OpenAPI description validated successfully. |
+| `git diff --check` | Passed | No whitespace errors. |
+| `docker build -t pulseops-hardening-check .` | Passed | Production release image builds locally. |
+| `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /tmp:/tmp aquasec/trivy:0.70.0 image --ignore-unfixed --severity CRITICAL,HIGH --format json --output /tmp/pulseops-trivy-results.json --exit-code 1 pulseops-hardening-check` | Passed | Blocking HIGH/CRITICAL scan completed with exit code 0. |
 
 ## Passing Criteria
 

@@ -23,6 +23,7 @@ defmodule PulseOps.Jobs.Job do
     field :payload, :map, default: %{}
     field :result, :map
     field :idempotency_key, :string
+    field :idempotency_fingerprint, :string
     field :correlation_id, :string
     field :attempt_count, :integer, default: 0
     field :max_attempts, :integer
@@ -57,6 +58,7 @@ defmodule PulseOps.Jobs.Job do
       :priority,
       :payload,
       :idempotency_key,
+      :idempotency_fingerprint,
       :correlation_id,
       :max_attempts,
       :timeout_ms,

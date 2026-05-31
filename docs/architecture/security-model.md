@@ -60,12 +60,14 @@ while preserving a small operational surface for the platform team.
 
 - Ecto changesets validate queue names, attempt ceilings, timeout budgets, and
   worker allowlists.
-- Job creation rejects malformed ISO8601 timestamps.
+- Job creation rejects malformed ISO8601 timestamps and malformed numeric
+  controls instead of silently defaulting client errors.
 - The worker layer only executes supported handlers (`noop`, `flaky`, `crash`,
   `sleep`, `webhook`).
 - Webhook workers reject non-HTTPS destinations by default, block private
   network targets, support explicit host allowlists, resolve DNS before egress,
-  and use a per-host circuit breaker for repeated failures.
+  pin the approved connection URI to a validated address, disable automatic
+  redirects, and use a per-host circuit breaker for repeated failures.
 
 ### Audit logging
 

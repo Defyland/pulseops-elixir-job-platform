@@ -11,6 +11,7 @@ config :pulse_ops,
   ecto_repos: [PulseOps.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true],
   api_rate_limit: %{limit: 240, window_ms: 60_000, storage: :ets},
+  metrics_auth: %{bearer_token: nil},
   job_retention_pruning_interval_ms: 86_400_000,
   webhook_security: %{
     allowed_hosts: [],
@@ -40,7 +41,7 @@ config :pulse_ops, PulseOpsWeb.Endpoint,
 # Configure Elixir's Logger
 config :logger, :default_formatter,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id, :correlation_id, :organization_id, :job_id, :queue]
+  metadata: [:request_id, :correlation_id, :organization_id, :job_id, :queue, :runtime_queue]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
