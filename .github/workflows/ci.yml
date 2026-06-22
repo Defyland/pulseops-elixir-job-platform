@@ -28,7 +28,7 @@ jobs:
       SECRET_KEY_BASE: 4M4IB5z4lODkSOcQm4uNX1mQv1l5hMPU9B2X0cA1DqfQz0F1zW9O7pL2V0hYtQ9p
       PHX_SERVER: "false"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
