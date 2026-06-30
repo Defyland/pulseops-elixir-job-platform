@@ -308,3 +308,11 @@ make ci
 - add JWT or workload-identity auth for internal service-to-service traffic
 - add RabbitMQ ingress adapter for external publishers
 - add tenant-scoped dashboard pages on top of the JSON API
+
+## License
+
+This repository is published under the MIT License. See
+[LICENSE.txt](LICENSE.txt).
+
+That keeps the execution model, operator flows, and Elixir platform notes
+reusable for study and internal experimentation.
